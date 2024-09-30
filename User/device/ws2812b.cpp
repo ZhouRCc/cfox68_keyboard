@@ -21,12 +21,23 @@ WS2812::WS2812() {
 void WS2812::setColor(uint32_t color, int dot_index) {
     if (dot_index >= 0 && dot_index < LED_NUM) {
         current_color[dot_index] = color;
+        int i = dot_index;
+        for (int j = 15; j >= 8; j--) { // G
+            pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 23; j >= 16; j--) { // R
+            pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 7; j >= 0; j--) { // B
+            pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
+        }
     }
 }
 
 void WS2812::setColor(uint32_t color) {
     for (int i = 0; i < LED_NUM; i++) {
-        current_color[i] = color;
+        setColor(color, i);
+        
     }
 }
 
@@ -36,7 +47,7 @@ void WS2812::setColor(uint32_t color, int type,int a) {
         return;
     for (int i = 0; i < LED_NUM; i++) {
         if(led_type[i] == type)
-            current_color[i] = color;
+            setColor(color, i);
     }
 }
 
@@ -56,36 +67,8 @@ void WS2812::show(int dot_index, uint32_t color) {
     HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
 
-void WS2812::show(int dot_index) {
-    if (dot_index < 0 || dot_index >= LED_NUM) return;
-
-    int i = dot_index;
-    for (int j = 15; j >= 8; j--) { // G
-        pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((current_color[dot_index] >> j) & 0x01) ? WS_H : WS_L;
-    }
-    for (int j = 23; j >= 16; j--) { // R
-        pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((current_color[dot_index] >> j) & 0x01) ? WS_H : WS_L;
-    }
-    for (int j = 7; j >= 0; j--) { // B
-        pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((current_color[dot_index] >> j) & 0x01) ? WS_H : WS_L;
-    }
-    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
-}
-
-void WS2812::show(int type,int a) {
-    UNUSED(a);
-    if(type != LED_D && type != LED_Z)
-        return;
-    for (int i = 0; i < LED_NUM; i++) {
-        if(type == led_type[i])
-            show(i, current_color[i]);
-    }
-}
-
 void WS2812::show() {
-    for (int i = 0; i < LED_NUM; i++) {
-        show(i);
-    }
+    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
 
 void WS2812::setBrightness(int brightness, int dot_index) {

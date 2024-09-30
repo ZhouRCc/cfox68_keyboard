@@ -52,10 +52,6 @@ public:
 
     void show(int dot_index, uint32_t color);
 
-    void show(int dot_index);
-
-    void show(int type,int a);
-
     void show();
 
     void setBrightness(int brightness, int dot_index);
