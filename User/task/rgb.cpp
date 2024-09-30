@@ -22,11 +22,11 @@ void FunctionRgb(void *argument)
 
     uint32_t RGB_COLOR_zhou = 0xff8300;
     uint32_t RGB_COLOR_di = 0x465618;
-    rgb.setColor(RGB_COLOR_zhou, LED_Z, 0);
-	rgb.setColor(RGB_COLOR_di, LED_D, 0);
+    rgb.setColor(RGB_COLOR_zhou, LED_Z);
+	rgb.setColor(RGB_COLOR_di, LED_D);
     // rgb.setColor(RGB_COLOR_di);
     rgb.show();
-    rgb.breathStep(getFreqSys, 100);
+    rgb.breathStep(getFreqSys, 50);
 
 
     uint32_t tick = osKernelGetTickCount(); /* 控制任务运行频率的计时 */

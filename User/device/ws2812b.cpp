@@ -41,8 +41,7 @@ void WS2812::setColor(uint32_t color) {
     }
 }
 
-void WS2812::setColor(uint32_t color, int type,int a) {
-    UNUSED(a);
+void WS2812::setColor(uint32_t color,  led_type_e type) {
     if(type != LED_D && type != LED_Z)
         return;
     for (int i = 0; i < LED_NUM; i++) {
@@ -86,8 +85,7 @@ void WS2812::setBrightness(int brightness) {
     }
 }
 
-void WS2812::setBrightness(int brightness, int type,int a) {
-    UNUSED(a);
+void WS2812::setBrightness(int brightness, led_type_e type) {
     if(type != LED_D && type != LED_Z)
         return;
     uint32_t result_color = 0;
@@ -106,13 +104,13 @@ void WS2812::breathStep(uint32_t (*get_freq)(void) ,uint32_t freq) {
     breath_param.delay_tick = breath_param.freq_sys / breath_param.freq_set;
 }
 
-void WS2812::breathingLight(int type) {
+void WS2812::breathingLight(led_type_e type) {
     if(type != LED_D && type != LED_Z)
         return;
     static uint8_t brightness = 0;
     static uint8_t increasing = 1; // 控制亮度增加或减少的标志
     static uint8_t tick = 0;
-    setBrightness(brightness, type,0); // 根据当前亮度显示 LED
+    setBrightness(brightness, type); // 根据当前亮度显示 LED
     if(!breath_param.freq_set || tick >= breath_param.delay_tick)
     {
         breath_circle(&brightness ,&increasing);

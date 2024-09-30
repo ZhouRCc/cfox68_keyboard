@@ -48,7 +48,7 @@ public:
 
     void setColor(uint32_t color);
 
-    void setColor(uint32_t color, int type ,int a);
+    void setColor(uint32_t color, led_type_e type);
 
     void show(int dot_index, uint32_t color);
 
@@ -58,11 +58,11 @@ public:
 
     void setBrightness(int brightness);
 
-    void setBrightness(int brightness, int type,int a);
+    void setBrightness(int brightness, led_type_e type);
 
     void breathStep(uint32_t (*get_freq)(void) ,uint32_t freq);
 
-    void breathingLight(int type);
+    void breathingLight( led_type_e type);
 
     void breathingLight();
 
