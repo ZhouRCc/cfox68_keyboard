@@ -1,20 +1,14 @@
 {
     "cortex-debug.gdbPath": "/opt/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/arm-none-eabi-gdb",
     "files.associations": {
-        "uart_it.h": "c",
-        "remote_control.h": "c",
-        "go_m8010_6_driver.h": "c",
-        "can.h": "c",
         "main.h": "c",
         "stm32f4xx_hal.h": "c",
         "stm32f4xx_hal_conf.h": "c",
-        "djimotor.h": "c",
-        "struct_typedef.h": "c",
         "usertask.h": "c",
-        "pid.h": "c",
         "gpio.h": "c",
         "topdefine.h": "c",
-        "ws2812b.h": "c"
+        "ws2812b.h": "c",
+        "usb_device.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

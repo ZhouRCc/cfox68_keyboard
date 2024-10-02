@@ -3,6 +3,7 @@
 */
 #include "task/TopDefine.h"
 #include "task/userTask.h"
+#include "usb_device.h"
 
 //任务与队列结构体
 robot_t robotStruct;
@@ -29,7 +30,7 @@ const osThreadAttr_t attr_key = {
 void initFunction(void *argument) 
 {
     (void)argument; /* 未使用argument，消除警告 */
-
+    MX_USB_DEVICE_Init();
     osKernelLock();
     /* 创建任务 */
     robotStruct.thread.rgb =

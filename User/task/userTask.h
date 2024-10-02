@@ -25,15 +25,15 @@ typedef struct
     }thread;
     
     /*消息队列*/
-    struct
-    {
-        // osMessageQueueId_t q_can_send; 
-    }msgq;
-    /*事件组*/
-    struct
-    {
-        // osEventFlagsId_t eventReceive;
-    }events;
+    // struct
+    // {
+    //     // osMessageQueueId_t q_can_send; 
+    // }msgq;
+    // /*事件组*/
+    // struct
+    // {
+    //     // osEventFlagsId_t eventReceive;
+    // }events;
     
 #if _DEBUG == 1
     // uint32_t flash_data;
