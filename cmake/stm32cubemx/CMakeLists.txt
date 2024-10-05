@@ -35,6 +35,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Core/Src/tim.c
     ../../Core/Src/stm32f4xx_it.c
     ../../Core/Src/stm32f4xx_hal_msp.c
+    ../../Core/Src/stm32f4xx_hal_timebase_tim.c
     ../../USB_DEVICE/App/usb_device.c
     ../../USB_DEVICE/App/usbd_desc.c
     ../../USB_DEVICE/Target/usbd_conf.c

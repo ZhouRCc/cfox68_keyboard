@@ -2,6 +2,7 @@
 #include "main.h"
 #include "usbd_hid.h"
 #include <cmsis_os2.h>
+#include "bsp/delay.h"
 extern USBD_HandleTypeDef hUsbDeviceFS;  // 外部声明USB设备句柄
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -56,7 +57,7 @@ void KeyScan::operator()() {
 
             // 恢复当前列引脚为低电平
             HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_RESET);
-            osDelay(1);
+            delay_us(50);
         }   
     }
 
@@ -110,7 +111,7 @@ uint8_t KeyScan::get_modifier_mask(uint8_t key) {
 
 //test  =========```````````````` \\\\\\\\\`  -=-=-=-=-=-=-========
 //===wwwwwwwwwwwwwww
-//=================
+//========qqqqqqqqqqqqq=========
 //===============
 ////=============
 

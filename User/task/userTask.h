@@ -11,7 +11,7 @@ extern "C" {
 
 /* 所有任务都要define一个“任务运行频率”和“初始化延时” */
 #define TASK_FREQ_RGB (500u)
-#define TASK_FREQ_KEY (200u)
+#define TASK_FREQ_KEY (1000u)
 
 
 typedef struct
