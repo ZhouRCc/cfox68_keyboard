@@ -145,7 +145,6 @@ typedef union {
 struct key_buff_t
 {
     uint8_t key_count;
-    uint8_t buff[14];
     uint8_t col[14];
     uint8_t row[14];
     bool fn_pressed;

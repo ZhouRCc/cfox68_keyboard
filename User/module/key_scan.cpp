@@ -43,29 +43,28 @@ KeyScan::KeyScan() {
 
 // 按键扫描函数
 void KeyScan::operator()() {
+    uint8_t key = 0;
     key_buff.key_count = 0;
     for (int col = 0; col < MATRIX_COLS; col++) {
-        for (int col = 0; col < MATRIX_COLS; col++) {
-            if(key_buff.key_count >= 14) break;
-            // 设置当前列引脚为高电平
-            HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_SET);
+        if(key_buff.key_count >= 14) break;
+        // 设置当前列引脚为高电平
+        HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_SET);
 
-            // 读取行的状态
-            for (int row = 0; row < MATRIX_ROWS; row++) {
-                if(HAL_GPIO_ReadPin(row_ports[row], row_pins[row]) == GPIO_PIN_SET)
-                {
-                    key_buff.buff[ key_buff.key_count] = keymaps[0][row][col];
-                    if(key_buff.buff[key_buff.key_count] == MO_1)
-                        key_buff.fn_pressed = true;
-                    key_buff.col[key_buff.key_count] = col;
-                    key_buff.row[key_buff.key_count ++] = row;
-                }
+        // 读取行的状态
+        for (int row = 0; row < MATRIX_ROWS; row++) {
+            if(HAL_GPIO_ReadPin(row_ports[row], row_pins[row]) == GPIO_PIN_SET)
+            {
+                key = keymaps[0][row][col];
+                if(key == MO_1)
+                    key_buff.fn_pressed = true;
+                key_buff.col[key_buff.key_count] = col;
+                key_buff.row[key_buff.key_count ++] = row;
             }
+        }
 
-            // 恢复当前列引脚为低电平
-            HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_RESET);
-            delay_us(50);
-        }   
+        // 恢复当前列引脚为低电平
+        HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_RESET);
+        delay_us(60); 
     }
 
     process_and_send_keys();
@@ -155,5 +154,5 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
 //===wwwwwwwwwwwwwww===qqqq
 //========qqqqqweeeeq=========
 //===============
-////=============
+//
 
