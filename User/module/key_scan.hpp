@@ -137,7 +137,7 @@ typedef union {
     struct {
         uint8_t modifier;  // 修饰键字节
         uint8_t reserved;  // 保留字节，总是0
-        uint16_t keys[6];   // 同时按下的6个普通按键
+        uint8_t keys[6];   // 同时按下的6个普通按键
     } report;
     uint8_t buffer[8];  // 字节数组，用于发送
 } HID_Report_Union_TypeDef;

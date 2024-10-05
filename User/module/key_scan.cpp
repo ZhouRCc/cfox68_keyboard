@@ -1,7 +1,7 @@
 #include "key_scan.hpp"
 #include "main.h"
 #include "usbd_hid.h"
-
+#include <cmsis_os2.h>
 extern USBD_HandleTypeDef hUsbDeviceFS;  // 外部声明USB设备句柄
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -56,6 +56,7 @@ void KeyScan::operator()() {
 
             // 恢复当前列引脚为低电平
             HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_RESET);
+            osDelay(1);
         }   
     }
 
@@ -64,12 +65,6 @@ void KeyScan::operator()() {
 
 void KeyScan::process_and_send_keys() {
     uint8_t keys_index = 0;  // 普通按键的索引
-    
-    // 清空当前的修饰键和按键数组
-    hid_report.report.modifier = 0;
-    for (int i = 0; i < 6; i++) {
-        hid_report.report.keys[i] = 0;
-    }
 
     // 遍历缓冲区中的按键
     for (int i = 0; i < key_count; i++) {
@@ -85,10 +80,14 @@ void KeyScan::process_and_send_keys() {
             }
         }
     }
-    memset(key_buff, 0, sizeof(key_buff));
     // 通过联合体的字节数组buffer发送USB HID报告
     USBD_HID_SendReport(&hUsbDeviceFS, hid_report.buffer, sizeof(hid_report.buffer));
-
+    memset(key_buff, 0, sizeof(key_buff));
+    // 清空当前的修饰键和按键数组
+    hid_report.report.modifier = 0;
+    for (int i = 0; i < 6; i++) {
+        hid_report.report.keys[i] = 0;
+    }
 }
 
 bool KeyScan::key_is_modifier(uint8_t key) {
@@ -110,8 +109,7 @@ uint8_t KeyScan::get_modifier_mask(uint8_t key) {
 }
 
 //test  =========```````````````` \\\\\\\\\`  -=-=-=-=-=-=-========
-//================;';';';';';';'
-//=====  ============yyyyyyyyytyTYATYAtyATYAAAAAAyyytytyty====
+//===wwwwwwwwwwwwwww
 //=================
 //===============
 ////=============
