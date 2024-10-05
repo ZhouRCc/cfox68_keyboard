@@ -10,15 +10,15 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 {KC_ESC,  KC_1,    KC_2,   KC_3,  KC_4,  KC_5,   KC_6,   KC_7,   KC_8,   KC_9,    KC_0,    KC_MINS, KC_EQL,  KC_BSPC, KC_GRV},
 {KC_TAB,  KC_Q,    KC_W,   KC_E,  KC_R,  KC_T,   KC_Y,   KC_U,   KC_I,   KC_O,    KC_P,    KC_LBRC, KC_RBRC, KC_BSLS, KC_DEL},
 {KC_CAPS, KC_A,    KC_S,   KC_D,  KC_F,  KC_G,   KC_H,   KC_J,   KC_K,   KC_L,    KC_SCLN, KC_QUOT, KC_ENTER,KC_NO,   KC_INS},
-{KC_LSFT, KC_Z,    KC_X,   KC_C,  KC_V,  KC_B,   KC_N,   KC_M,   KC_COMM,KC_DOT,  KC_SLSH, KC_RSFT, KC_NO,   KC_UP,   /*KC_MYCM*/0},
-{KC_LCTL, KC_LGUI, KC_LALT,KC_NO, KC_NO, KC_SPC, KC_NO,  KC_NO,  KC_NO,/*MO_1,KC_COPY,KC_PSTE,*/0,0,0, KC_LEFT, KC_DOWN, KC_RGHT}
+{KC_LSFT, KC_Z,    KC_X,   KC_C,  KC_V,  KC_B,   KC_N,   KC_M,   KC_COMM,KC_DOT,  KC_SLSH, KC_RSFT, KC_NO,   KC_UP,   KC_SHELL},
+{KC_LCTL, KC_LGUI, KC_LALT,KC_NO, KC_NO, KC_SPC, KC_NO,  KC_NO,  KC_NO,  MO_1,    KC_COPY, KC_PSTE, KC_LEFT, KC_DOWN, KC_RGHT}
 },
 {
 {RGB_TOG, KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,   KC_F6,  KC_F7,  KC_F8,  KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_NO,   KC_CAPS},
 {KC_NO,   KC_NO,  KC_NO,  KC_NO,  RGB_RI, RGB_RD,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   RGB_TOG},
 {KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_GI,  RGB_GD, KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_RSET, KC_NO,   KC_NO},
 {KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_BI,  RGB_BD, KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,   RGB_LI,  KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,   RGB_LD,  KC_NO}
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_COPY, KC_PSTE, KC_NO,   RGB_LD,  KC_NO}
 }
 };
 
@@ -38,21 +38,28 @@ KeyScan::KeyScan() {
     for(int i = 0; i < 8; i++) {
         hid_report.buffer[i] = 0;
     }
+    memset(&key_buff, 0, sizeof(key_buff));
 }
 
 // 按键扫描函数
 void KeyScan::operator()() {
-    key_count = 0;
+    key_buff.key_count = 0;
     for (int col = 0; col < MATRIX_COLS; col++) {
         for (int col = 0; col < MATRIX_COLS; col++) {
-            if(key_count >= 14) break;
+            if(key_buff.key_count >= 14) break;
             // 设置当前列引脚为高电平
             HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_SET);
 
             // 读取行的状态
             for (int row = 0; row < MATRIX_ROWS; row++) {
                 if(HAL_GPIO_ReadPin(row_ports[row], row_pins[row]) == GPIO_PIN_SET)
-                    key_buff[key_count ++] = keymaps[0][row][col];
+                {
+                    key_buff.buff[ key_buff.key_count] = keymaps[0][row][col];
+                    if(key_buff.buff[key_buff.key_count] == MO_1)
+                        key_buff.fn_pressed = true;
+                    key_buff.col[key_buff.key_count] = col;
+                    key_buff.row[key_buff.key_count ++] = row;
+                }
             }
 
             // 恢复当前列引脚为低电平
@@ -66,15 +73,22 @@ void KeyScan::operator()() {
 
 void KeyScan::process_and_send_keys() {
     uint8_t keys_index = 0;  // 普通按键的索引
-
     // 遍历缓冲区中的按键
-    for (int i = 0; i < key_count; i++) {
-        uint8_t key = key_buff[i];
+    for (int i = 0; i < key_buff.key_count; i++) {
+        uint8_t key = keymaps[key_buff.fn_pressed][key_buff.row[i]][key_buff.col[i]];
         
         if (key_is_modifier(key)) {
             // 如果是修饰键，将其添加到修饰键字节中
             hid_report.report.modifier |= get_modifier_mask(key);
-        } else {
+        } 
+        else if(key >= KC_PSTE)
+        {
+            process_custom_keys(key,&keys_index);
+        }
+        else if(key >= RGB_TOG && key <= KC_RSET) {
+            process_rgb(key);
+        }
+        else{
             // 如果是普通按键，存入报告数组（最多6个按键）
             if (keys_index < 6) {
                 hid_report.report.keys[keys_index++] = key;
@@ -83,7 +97,7 @@ void KeyScan::process_and_send_keys() {
     }
     // 通过联合体的字节数组buffer发送USB HID报告
     USBD_HID_SendReport(&hUsbDeviceFS, hid_report.buffer, sizeof(hid_report.buffer));
-    memset(key_buff, 0, sizeof(key_buff));
+    memset(&key_buff, 0, sizeof(key_buff));
     // 清空当前的修饰键和按键数组
     hid_report.report.modifier = 0;
     for (int i = 0; i < 6; i++) {
@@ -109,9 +123,37 @@ uint8_t KeyScan::get_modifier_mask(uint8_t key) {
     }
 }
 
+void KeyScan::process_rgb(uint8_t key) {
+    rgb_array[key - RGB_TOG]();
+}
+
+void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
+    switch (key)
+    {
+        case KC_PSTE:
+            if(key_buff.fn_pressed) 
+                hid_report.report.modifier |= get_modifier_mask(KC_RSFT);
+            hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
+            hid_report.report.keys[*index ++] = KC_V;
+            break;
+        case KC_COPY:
+            if(key_buff.fn_pressed) 
+                hid_report.report.modifier |= get_modifier_mask(KC_RSFT);
+            hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
+            hid_report.report.keys[*index ++] = KC_C;
+            break;
+        case KC_SHELL:
+            hid_report.report.modifier |= get_modifier_mask(KC_LALT);
+            hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
+            hid_report.report.keys[*index ++] = KC_T;
+            break;
+    }
+}
+
+
 //test  =========```````````````` \\\\\\\\\`  -=-=-=-=-=-=-========
-//===wwwwwwwwwwwwwww
-//========qqqqqqqqqqqqq=========
+//===wwwwwwwwwwwwwww===qqqq
+//========qqqqqweeeeq=========
 //===============
 ////=============
 

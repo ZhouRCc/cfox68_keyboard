@@ -92,10 +92,10 @@ typedef enum {
     KC_RGHT = 0x4F, // 方向键 右
 
     // 其他自定义宏
-    // MO_1 = 0xFF,    // 切换至层1的功能键
-    // KC_MYCM = 0xFD, // 自定义键: 我的电脑快捷键
-    // KC_COPY = 0xFE, // 自定义键: 复制
-    // KC_PSTE = 0xFC,  // 自定义键: 粘贴
+    MO_1 = 0xFF,    // 切换至层1的功能键
+    KC_SHELL = 0xFD, // 自定义键: SHELL
+    KC_COPY = 0xFE, // 自定义键: 复制
+    KC_PSTE = 0xFC,  // 自定义键: 粘贴
 
     KC_LCTL = 0x70, // 左Ctrl
     KC_LSFT = 0x71, // 左Shift
@@ -119,7 +119,7 @@ typedef enum {
 
 typedef enum
 {
-    RGB_TOG = 1,
+    RGB_TOG = 0xE0,
     RGB_MOD,
     RGB_RI,
     RGB_GI,
@@ -131,7 +131,7 @@ typedef enum
     RGB_LD,
     KC_RSET
 }rgb_key_e;
-
+typedef void (*RgbCallback)(void);
 // 定义联合体来存储HID按键报告
 typedef union {
     struct {
@@ -141,6 +141,15 @@ typedef union {
     } report;
     uint8_t buffer[8];  // 字节数组，用于发送
 } HID_Report_Union_TypeDef;
+
+struct key_buff_t
+{
+    uint8_t key_count;
+    uint8_t buff[14];
+    uint8_t col[14];
+    uint8_t row[14];
+    bool fn_pressed;
+};
 
 class KeyScan
 {
@@ -152,10 +161,12 @@ private:
     bool key_is_modifier(uint8_t key);
     uint8_t get_modifier_mask(uint8_t key);
     void process_and_send_keys();
+    void process_rgb(uint8_t key);
+    void process_custom_keys(uint8_t key, uint8_t* index);
 
-    uint8_t key_buff[14] = {0};
-    uint8_t key_count = 0;
+    key_buff_t key_buff;
     HID_Report_Union_TypeDef hid_report; // 按键缓冲区,最多一次发6个普通按键
+    RgbCallback rgb_array[10];
 };
 
 
