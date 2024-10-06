@@ -20,7 +20,7 @@ void FunctionRgb(void *argument)
     (void)argument; /* 未使用argument，消除警告 */
     const uint32_t delay_tick = osKernelGetTickFreq() / TASK_FREQ_RGB;
 
-    uint32_t RGB_COLOR_zhou = 0xff8300;
+    uint32_t RGB_COLOR_zhou = 0x661224;
     uint32_t RGB_COLOR_di = 0x465618;
     rgb.setColor(RGB_COLOR_zhou, LED_Z);
 	rgb.setColor(RGB_COLOR_di, LED_D);

@@ -80,12 +80,12 @@ void KeyScan::process_and_send_keys() {
             // 如果是修饰键，将其添加到修饰键字节中
             hid_report.report.modifier |= get_modifier_mask(key);
         } 
-        else if(key >= KC_PSTE)
+        else if(key >= KC_RSET)
         {
             process_custom_keys(key,&keys_index);
         }
-        else if(key >= RGB_TOG && key <= KC_RSET) {
-            process_rgb(key);
+        else if(key >= RGB_TOG && key <= RGB_LD) {
+            // process_rgb(key);
         }
         else{
             // 如果是普通按键，存入报告数组（最多6个按键）
@@ -122,9 +122,6 @@ uint8_t KeyScan::get_modifier_mask(uint8_t key) {
     }
 }
 
-void KeyScan::process_rgb(uint8_t key) {
-    rgb_array[key - RGB_TOG]();
-}
 
 void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
     switch (key)
@@ -145,6 +142,9 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
             hid_report.report.modifier |= get_modifier_mask(KC_LALT);
             hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
             hid_report.report.keys[*index ++] = KC_T;
+            break;
+        case KC_RSET:
+            HAL_NVIC_SystemReset();
             break;
     }
 }

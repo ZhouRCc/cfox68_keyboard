@@ -96,6 +96,7 @@ typedef enum {
     KC_SHELL = 0xFD, // 自定义键: SHELL
     KC_COPY = 0xFE, // 自定义键: 复制
     KC_PSTE = 0xFC,  // 自定义键: 粘贴
+    KC_RSET = 0xFB, // 自定义键: 重启
 
     KC_LCTL = 0x70, // 左Ctrl
     KC_LSFT = 0x71, // 左Shift
@@ -129,9 +130,8 @@ typedef enum
     RGB_BD,
     RGB_LI,
     RGB_LD,
-    KC_RSET
 }rgb_key_e;
-typedef void (*RgbCallback)(void);
+
 // 定义联合体来存储HID按键报告
 typedef union {
     struct {
@@ -160,12 +160,12 @@ private:
     bool key_is_modifier(uint8_t key);
     uint8_t get_modifier_mask(uint8_t key);
     void process_and_send_keys();
-    void process_rgb(uint8_t key);
+    // void process_rgb(uint8_t key);
     void process_custom_keys(uint8_t key, uint8_t* index);
 
     key_buff_t key_buff;
     HID_Report_Union_TypeDef hid_report; // 按键缓冲区,最多一次发6个普通按键
-    RgbCallback rgb_array[10];
+    // RgbCallback rgb_array[10];
 };
 
 
