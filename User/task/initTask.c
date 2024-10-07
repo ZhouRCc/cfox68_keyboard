@@ -18,7 +18,13 @@ const osThreadAttr_t  attr_rgb = {
 const osThreadAttr_t attr_key = {
     .name = "key",
     .priority = osPriorityRealtime,
-    .stack_size = 128 * 6,
+    .stack_size = 256 * 8,
+};
+
+const osThreadAttr_t attr_hid = {
+    .name = "hid",
+    .priority = osPriorityRealtime,
+    .stack_size = 128 * 4,
 };
 
 /*********************/
@@ -37,6 +43,8 @@ void initFunction(void *argument)
         osThreadNew(FunctionRgb, NULL, &attr_rgb);
     robotStruct.thread.key =
         osThreadNew(FunctionKey, NULL, &attr_key);
+    robotStruct.thread.hid =
+        osThreadNew(FunctionHid, NULL, &attr_hid);
     
     osKernelUnlock();
     osThreadTerminate(osThreadGetId()); /* 结束自身 */

@@ -60,6 +60,8 @@ void KeyScan::operator()() {
                 key_buff.col[key_buff.key_count] = col;
                 key_buff.row[key_buff.key_count ++] = row;
             }
+            if(row <= 1)
+                delay_us(20);
         }
 
         // 恢复当前列引脚为低电平
@@ -94,6 +96,10 @@ void KeyScan::process_and_send_keys() {
             }
         }
     }
+
+}
+
+void KeyScan::send_report() {
     // 通过联合体的字节数组buffer发送USB HID报告
     USBD_HID_SendReport(&hUsbDeviceFS, hid_report.buffer, sizeof(hid_report.buffer));
     memset(&key_buff, 0, sizeof(key_buff));
@@ -152,7 +158,7 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
 
 //test  =========```````````````` \\\\\\\\\`  -=-=-=-=-=-=-========
 //===wwwwwwwwwwwwwww===qqqq
-//========qqqqqweeeeq=========
+//========qqqqqweee
 //===============
 //
 

@@ -155,6 +155,7 @@ class KeyScan
 public:
     KeyScan();
     void operator()();
+    void send_report();
 
 private:
     bool key_is_modifier(uint8_t key);
@@ -162,6 +163,7 @@ private:
     void process_and_send_keys();
     // void process_rgb(uint8_t key);
     void process_custom_keys(uint8_t key, uint8_t* index);
+    
 
     key_buff_t key_buff;
     HID_Report_Union_TypeDef hid_report; // 按键缓冲区,最多一次发6个普通按键

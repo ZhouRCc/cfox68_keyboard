@@ -12,6 +12,7 @@ extern "C" {
 /* 所有任务都要define一个“任务运行频率”和“初始化延时” */
 #define TASK_FREQ_RGB (500u)
 #define TASK_FREQ_KEY (1000u)
+#define TASK_FREQ_HID (500u)
 
 
 typedef struct
@@ -21,6 +22,7 @@ typedef struct
     {
         osThreadId_t rgb;
         osThreadId_t key;
+        osThreadId_t hid;
 
     }thread;
     
@@ -43,6 +45,7 @@ typedef struct
 /* Exported functions prototypes -------------------------------------------- */
 void FunctionRgb(void *argument);
 void FunctionKey(void *argument);
+void FunctionHid(void *argument);
 
 
 #ifdef __cplusplus
