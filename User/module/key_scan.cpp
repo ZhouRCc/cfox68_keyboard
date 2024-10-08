@@ -49,7 +49,7 @@ void KeyScan::operator()() {
         if(key_buff.key_count >= 14) break;
         // 设置当前列引脚为高电平
         HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_SET);
-
+        delay_us(30); 
         // 读取行的状态
         for (int row = 0; row < MATRIX_ROWS; row++) {
             if(HAL_GPIO_ReadPin(row_ports[row], row_pins[row]) == GPIO_PIN_SET)
@@ -60,13 +60,13 @@ void KeyScan::operator()() {
                 key_buff.col[key_buff.key_count] = col;
                 key_buff.row[key_buff.key_count ++] = row;
             }
-            if(row <= 1)
-                delay_us(20);
+            // if(row == 1)
+            //     delay_us(20);
         }
 
         // 恢复当前列引脚为低电平
         HAL_GPIO_WritePin(col_ports[col], col_pins[col], GPIO_PIN_RESET);
-        delay_us(60); 
+        delay_us(30); 
     }
 
     process_and_send_keys();
