@@ -18,50 +18,90 @@ WS2812::WS2812() {
 // WS2812::~WS2812() {
 // }
 
-void WS2812::setColor(uint32_t color, int dot_index) {
-    if (dot_index >= 0 && dot_index < LED_NUM) {
-        current_color[dot_index] = color;
-        int i = dot_index;
-        for (int j = 15; j >= 8; j--) { // G
-            pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
-        }
-        for (int j = 23; j >= 16; j--) { // R
-            pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
-        }
-        for (int j = 7; j >= 0; j--) { // B
-            pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((current_color[i] >> j) & 0x01) ? WS_H : WS_L;
+void WS2812::setColor(uint32_t color, led_type_e type) {
+    // 确保类型索引在允许的范围内
+    if ( type >= LED_TYPE_NUM) return;
+    
+    // 设置该类型对应的颜色
+    current_color[type] = color;
+
+    // 遍历所有LED
+    for (int i = 0; i < LED_NUM; i++) {
+        // 判断当前LED是否属于指定的类型
+        if (led_type[i] == type) {
+            // 设置颜色值到pwm_data
+            for (int j = 15; j >= 8; j--) { // G (绿)
+                pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+            }
+            for (int j = 23; j >= 16; j--) { // R (红)
+                pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+            }
+            for (int j = 7; j >= 0; j--) { // B (蓝)
+                pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+            }
         }
     }
 }
+
 
 void WS2812::setColor(uint32_t color) {
+    int i = 0;
+    led_type_e type;
+    for(i = 0; i < LED_TYPE_NUM; i++) {
+        current_color[i] = color;
+    }
+    // 遍历所有LED
     for (int i = 0; i < LED_NUM; i++) {
-        setColor(color, i);
-        
+        type = led_type[i];
+        // 设置颜色值到pwm_data
+        for (int j = 15; j >= 8; j--) { // G (绿)
+            pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 23; j >= 16; j--) { // R (红)
+            pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 7; j >= 0; j--) { // B (蓝)
+            pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((current_color[type] >> j) & 0x01) ? WS_H : WS_L;
+        }
     }
 }
 
-void WS2812::setColor(uint32_t color,  led_type_e type) {
-    if(type != LED_D && type != LED_Z)
-        return;
+void WS2812::show(uint32_t color, led_type_e type) {
+    // 确保类型索引在允许的范围内
+    if ( type >= LED_TYPE_NUM) return;
+
+    // 遍历所有LED
     for (int i = 0; i < LED_NUM; i++) {
-        if(led_type[i] == type)
-            setColor(color, i);
+        // 判断当前LED是否属于指定的类型
+        if (led_type[i] == type) {
+            // 设置颜色值到pwm_data
+            for (int j = 15; j >= 8; j--) { // G (绿)
+                pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+            }
+            for (int j = 23; j >= 16; j--) { // R (红)
+                pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+            }
+            for (int j = 7; j >= 0; j--) { // B (蓝)
+                pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+            }
+        }
     }
+    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
 
-void WS2812::show(int dot_index, uint32_t color) {
-    if (dot_index < 0 || dot_index >= LED_NUM) return;
-
-    int i = dot_index;
-    for (int j = 15; j >= 8; j--) { // G
-        pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
-    }
-    for (int j = 23; j >= 16; j--) { // R
-        pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
-    }
-    for (int j = 7; j >= 0; j--) { // B
-        pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+void WS2812::show(uint32_t color) {
+     // 遍历所有LED
+    for (int i = 0; i < LED_NUM; i++) {
+        // 设置颜色值到pwm_data
+        for (int j = 15; j >= 8; j--) { // G (绿)
+            pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 23; j >= 16; j--) { // R (红)
+            pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+        }
+        for (int j = 7; j >= 0; j--) { // B (蓝)
+            pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+        }
     }
     HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
@@ -70,33 +110,23 @@ void WS2812::show() {
     HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
 
-void WS2812::setBrightness(int brightness, int dot_index) {
-    if (dot_index >= 0 && dot_index < LED_NUM) {
-        uint32_t result_color = scale_color(current_color[dot_index], brightness);
-        show(dot_index, result_color);
-    }
-}
-
 void WS2812::setBrightness(int brightness) {
-    uint32_t result_color;
-    for (int i = 0; i < LED_NUM; i++) {
-        result_color = scale_color(current_color[i], brightness);
-        show(i, result_color);
+    uint32_t result_color[LED_TYPE_NUM] = {0};
+
+    for (int i = 0; i < LED_TYPE_NUM; i++) {
+        result_color[i] = scale_color(current_color[i], brightness);
+        show(result_color[i], (led_type_e)i);
     }
 }
 
 void WS2812::setBrightness(int brightness, led_type_e type) {
-    if(type != LED_D && type != LED_Z)
-        return;
+    if( type >= LED_TYPE_NUM) return;
+
     uint32_t result_color = 0;
-    for (int i = 0; i < LED_NUM; i++) {
-        if(led_type[i] == type)
-        {
-            result_color = scale_color(current_color[i], brightness);
-            show(i, result_color);
-        }
-    }
+    result_color = scale_color(current_color[type], brightness);
+    show(result_color, type);
 }
+
 
 void WS2812::breathStep(uint32_t (*get_freq)(void) ,uint32_t freq) {
     breath_param.freq_set = freq;
@@ -105,8 +135,8 @@ void WS2812::breathStep(uint32_t (*get_freq)(void) ,uint32_t freq) {
 }
 
 void WS2812::breathingLight(led_type_e type) {
-    if(type != LED_D && type != LED_Z)
-        return;
+    if(type >= LED_TYPE_NUM) return;
+
     static uint8_t brightness = 0;
     static uint8_t increasing = 1; // 控制亮度增加或减少的标志
     static uint8_t tick = 0;

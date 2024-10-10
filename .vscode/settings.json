@@ -9,7 +9,9 @@
         "topdefine.h": "c",
         "ws2812b.h": "c",
         "usb_device.h": "c",
-        "cmsis_os2.h": "c"
+        "cmsis_os2.h": "c",
+        "compare": "cpp",
+        "type_traits": "cpp"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }
