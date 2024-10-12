@@ -12,7 +12,7 @@ extern "C" {
 /* 所有任务都要define一个“任务运行频率”和“初始化延时” */
 #define TASK_FREQ_RGB (500u)
 #define TASK_FREQ_KEY (1000u)
-#define TASK_FREQ_HID (500u)
+#define TASK_FREQ_FLASH (1u)
 
 
 typedef struct
@@ -22,15 +22,15 @@ typedef struct
     {
         osThreadId_t rgb;
         osThreadId_t key;
-        osThreadId_t hid;
+        osThreadId_t flash;
 
     }thread;
     
     /*消息队列*/
-    // struct
-    // {
-    //     // osMessageQueueId_t q_can_send; 
-    // }msgq;
+    struct
+    {
+        osMessageQueueId_t q_flash_send; 
+    }msgq;
     // /*事件组*/
     // struct
     // {
@@ -45,8 +45,9 @@ typedef struct
 /* Exported functions prototypes -------------------------------------------- */
 void FunctionRgb(void *argument);
 void FunctionKey(void *argument);
-void FunctionHid(void *argument);
+void FunctionFlash(void *argument);
 
+extern robot_t robotStruct;
 
 #ifdef __cplusplus
 }

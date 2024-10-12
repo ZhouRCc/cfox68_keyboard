@@ -18,7 +18,9 @@
             ],
             "defines": [
                 "STM32F446xx",
-                "USE_HAL_DRIVER"
+                "USE_HAL_DRIVER",
+                "SYS_DEFINE=\"task/TopDefine.h\"",
+                "TOP_USER_CFG=\"task/UserCfg.h\""
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "cStandard": "c17",

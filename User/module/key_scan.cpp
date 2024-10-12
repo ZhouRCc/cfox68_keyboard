@@ -97,6 +97,8 @@ void KeyScan::process_and_send_keys() {
         }
     }
 
+    send_report();
+
 }
 
 void KeyScan::send_report() {
