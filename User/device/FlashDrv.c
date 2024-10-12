@@ -90,7 +90,7 @@ HAL_StatusTypeDef FlashDrv_Write(uint32_t Addr, uint8_t *source, uint32_t length
     uint32_t  SECTORError = 0;
     FLASH_EraseInitTypeDef EraseInitStruct;
     int trycnt = 0;
-    int i;
+    uint32_t i;
     
     /* Unlock the Flash to enable the flash control register access *************/
     HAL_FLASH_Unlock();
@@ -156,7 +156,7 @@ HAL_StatusTypeDef FlashDrv_Write(uint32_t Addr, uint8_t *source, uint32_t length
  
 uint32_t FlashDrv_read(uint32_t Addr, uint8_t *source, uint32_t length)
 {
-    int i;
+    uint32_t i;
     
     for ( i = 0; i < length; i++)
     {

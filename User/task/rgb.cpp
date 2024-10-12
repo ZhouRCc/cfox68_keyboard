@@ -26,7 +26,7 @@ void FunctionRgb(void *argument)
 	rgb.setColor(RGB_COLOR_di, LED_D);
     rgb.setMode(MODE_BREATH, LED_Z);
     rgb.show();
-    rgb.breathStep(getFreqSys, 10);
+    rgb.breathStep(getFreqSys, 30);
 
 
     uint32_t tick = osKernelGetTickCount(); /* 控制任务运行频率的计时 */

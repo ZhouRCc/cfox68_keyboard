@@ -41,24 +41,29 @@ typedef enum
     MODE_NUM,
 }ws_mode_e;
 
+typedef union {
+    uint32_t value;  // 整体作为一个32位整数
+
+    struct {
+        uint32_t is_on    : 1;   // bit0：表示是否开启 (0: 关闭, 1: 开启)
+        uint32_t reserved : 3;   // bit1-3：保留为 1
+        uint32_t mode     : 4;   // bit4-7：表示 LED 类型的模式
+        uint32_t color    : 24;  // bit8-31：表示 LED 类型的颜色
+    } fields;
+
+} LED_Params;
+
 typedef struct
 {
     /*存放灯光参数的flash首地址
-    bit0-3表示对应led类型是否开启，0表示关闭，1表示开启，最多4种led类型
-    bit4-15表示灯光模式，灯光模式最多16种，按led类型排序表示各类型的灯光模式，最多3种可以改变灯光模式的led类型
-    bit16-39表示第一种led类型的颜色，bit40-63表示第二种led类型的颜色
-    之后如果增加了灯光类型，可以往后增加，之后的直接32位的低24位表示一个颜色，高位为0
+    一个uint32表示一个led类型的灯光参数
+    bit0表示是否开启
+    bit1-3保留为1
+    bit4-7表示led类型的模式
+    bit8-31表示led类型的颜色
     */
     uint32_t flash_addr;
-    struct
-    {
-        bool on[LED_TYPE_NUM];//led类型的灯光是否开启
-        ws_mode_e mode[LED_TYPE_NUM];//led类型的灯光模式
-        uint32_t color[LED_TYPE_NUM];//led类型的颜色
-    }ws_data;
-    uint32_t flash_data[WS_FLASH_LENGTH];//存放灯光参数的flash
-    
-
+    LED_Params ws_data[LED_TYPE_NUM];
 }ws_flash_t;//ws2812b相关flash
 
 
@@ -109,7 +114,7 @@ private:
     //清空当前颜色
     void clear() {
         for (int i = 0; i < LED_TYPE_NUM; i++) {
-            ws_flash.ws_data.color[i] = 0;
+            ws_flash.ws_data[i].value = 0;
         }
     }
 };
