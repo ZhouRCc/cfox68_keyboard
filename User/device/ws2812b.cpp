@@ -21,45 +21,19 @@ WS2812::WS2812() {
 
 
 void WS2812::ws2812Init() {
-    // uint32_t start_addr = ADDR_FLASH_SECTOR_6;
-    // uint32_t lastNonEmptyAddress = 0;
 
-    // // Traverse from the start to the end of the flash sector
-    // for (start_addr = ADDR_FLASH_SECTOR_6; start_addr <= (ADDR_FLASH_SECTOR_7 - 4); start_addr += 4)
-    // {
-    //     uint32_t data = FlashDrv_read(); // Read the word at the current address
-        
-    //     // Check if the read data is not empty (0xFFFFFFFF is the default erased value in flash)
-    //     if (data != 0xFFFFFFFF)
-    //     {
-    //         lastNonEmptyAddress = start_addr; // Update the last non-empty address
-    //     }
-    //     else
-    //     {
-    //         break; // If the read data is empty, break out of the loop
-    //     }
-    // }
-    // // Update the flash address
-    // if(lastNonEmptyAddress == 0) {
+    // addr = Find_Last_NonEmpty_Address(ADDR_FLASH_SECTOR_6, ADDR_FLASH_SECTOR_7);
+    ws_flash.flash_addr = ADDR_FLASH_SECTOR_7;
+    // if( addr == ADDR_FLASH_SECTOR_6){
     //     ws_flash.flash_addr = ADDR_FLASH_SECTOR_6;
     // }
     // else{
-    //     ws_flash.flash_addr = lastNonEmptyAddress - (WS_FLASH_LENGTH - 1) * 4;
+    //     ws_flash.flash_addr = addr - (LED_TYPE_NUM - 1) * 4;
     // }
-    // for(int i = 0; i < WS_FLASH_LENGTH; i++) {
-    //     ws_flash.ws_data[i].value = STMFLASH_ReadWord(ws_flash.flash_addr + i * 4);
-    // }
-    // for(int i = 0; i < LED_TYPE_NUM; i++) {
-    //     ws_flash.ws_data.on[i] = ws_flash.flash_data[0] >> i & 0x01;
-    // }
-    // for(int i = 0; i < LED_TYPE_NUM; i++) {
-    //     ws_flash.ws_data.mode[i] = (ws_mode_e)(ws_flash.flash_data[0] >> (WS_FLASH_ON_LENGTH + i * WS_FLASH_MODE_LENGTH) & 0x0F);
-    // }
-    // ws_flash.ws_data.color[0] = (ws_flash.flash_data[0] >> 16 | ws_flash.flash_data[1] << 16) & 0x00FFFFFF;
-    // ws_flash.ws_data.color[1] = (ws_flash.flash_data[1] >> 8) & 0x00FFFFFF;
-    // for(int i = 2; i < LED_TYPE_NUM; i++) {
-    //     ws_flash.ws_data.color[i] = ws_flash.ws_data[i].value;
-    // }
+    for(int i = 0; i < LED_TYPE_NUM; i++) {
+        ws_flash.ws_data[i].value = Read_Flash_Uint32(ws_flash.flash_addr + i * 4);
+    }
+    update_pwm();
     
 }
 // WS2812::~WS2812() {
@@ -72,32 +46,22 @@ void WS2812::setColor(uint32_t color, led_type_e type) {
     // 设置该类型对应的颜色
     ws_flash.ws_data[type].fields.color = color;
     update_flash();
-    // 遍历所有LED
-    for (int i = 0; i < LED_NUM; i++) {
-        // 判断当前LED是否属于指定的类型
-        if (led_type[i] == type) {
-            // 设置颜色值到pwm_data
-            for (int j = 15; j >= 8; j--) { // G (绿)
-                pwm_data[RESET_WORD + (i * 24 + (15 - j))] = ((ws_flash.ws_data[type].fields.color >> j) & 0x01) ? WS_H : WS_L;
-            }
-            for (int j = 23; j >= 16; j--) { // R (红)
-                pwm_data[RESET_WORD + (i * 24 + (31 - j))] = ((ws_flash.ws_data[type].fields.color >> j) & 0x01) ? WS_H : WS_L;
-            }
-            for (int j = 7; j >= 0; j--) { // B (蓝)
-                pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((ws_flash.ws_data[type].fields.color >> j) & 0x01) ? WS_H : WS_L;
-            }
-        }
-    }
+    update_pwm();
 }
 
 
 void WS2812::setColor(uint32_t color) {
     int i = 0;
-    led_type_e type;
     for(i = 0; i < LED_TYPE_NUM; i++) {
         ws_flash.ws_data[i].fields.color = color;
     }
     update_flash();
+    update_pwm();
+}
+
+void WS2812::update_pwm()
+{
+    led_type_e type;
     // 遍历所有LED
     for (int i = 0; i < LED_NUM; i++) {
         type = led_type[i];
@@ -258,25 +222,21 @@ void WS2812::wsLoop() {
 }
 
 void WS2812::update_flash() {
-    // ws_flash.flash_addr += WS_FLASH_LENGTH * 4;
-    // ws_flash.flash_data[0] = ws_flash.ws_data.on[0] | (ws_flash.ws_data.on[1] << 1);
-    // ws_flash.flash_data[0] |= (ws_flash.ws_data.mode[0] << WS_FLASH_ON_LENGTH) | (ws_flash.ws_data.mode[1] << (WS_FLASH_ON_LENGTH + WS_FLASH_MODE_LENGTH));
-    // ws_flash.flash_data[0] |= ((ws_flash.ws_data.color[0] << 16) & 0xFFFF0000);
-    // ws_flash.flash_data[1] = (ws_flash.ws_data.color[0] >> 16 & 0xFF) | ((ws_flash.ws_data.color[1] << 8) & 0xFFFFFF00);
-    // for(int i = 2; i < WS_FLASH_LENGTH; i++) {
-    //     ws_flash.ws_data[i].value = ws_flash.ws_data.color[i];
-    // }
-    flash_send();
-}
-
-void WS2812::flash_send() {
     msg_flash.ptr = ws_flash.flash_addr;
-    for(int i = 0; i < WS_FLASH_LENGTH; i++) {
-        msg_flash.data[i] = ws_flash.ws_data[i].value;
+    for (int i = 0; i < LED_TYPE_NUM; i++)
+    {
+        uint32_t value = ws_flash.ws_data[i].value;  // 读取union中的value
+
+        // 将32位的 value 拆解成 4 个字节，并存入 msg_flash.data
+        msg_flash.data[i * 4]     = (value & 0xFF);           // 取低 8 位
+        msg_flash.data[i * 4 + 1] = (value >> 8) & 0xFF;      // 取第 8-15 位
+        msg_flash.data[i * 4 + 2] = (value >> 16) & 0xFF;     // 取第 16-23 位
+        msg_flash.data[i * 4 + 3] = (value >> 24) & 0xFF;     // 取高 8 位
     }
     osMessageQueueReset(robotStruct.msgq.q_flash_send);
     osMessageQueuePut(robotStruct.msgq.q_flash_send, &msg_flash, 1, 0);
 }
+
 
 // 回调函数
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {

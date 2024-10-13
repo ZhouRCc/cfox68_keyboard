@@ -36,7 +36,7 @@ typedef enum
 typedef struct
 {
     uint32_t ptr;
-    uint32_t data[WS_FLASH_LENGTH];
+    uint8_t data[WS_FLASH_LENGTH];
 }msg_flash_t;
 
 

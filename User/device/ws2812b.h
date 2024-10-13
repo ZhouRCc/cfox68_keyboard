@@ -107,9 +107,9 @@ private:
     msg_flash_t msg_flash;//发送flash消息队列
 
     void update_flash();//更新flash
-    void flash_send();
     uint32_t scale_color(uint32_t color, uint8_t target_brightness);//颜色亮度缩放
     void breath_circle(uint8_t* brightness ,uint8_t* increasing);//呼吸灯调整亮度
+    void update_pwm();//更新pwm数据
 
     //清空当前颜色
     void clear() {

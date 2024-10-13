@@ -20,13 +20,14 @@ void FunctionRgb(void *argument)
     (void)argument; /* 未使用argument，消除警告 */
     const uint32_t delay_tick = osKernelGetTickFreq() / TASK_FREQ_RGB;
     rgb.ws2812Init();
-    uint32_t RGB_COLOR_zhou = 0x151200;
-    uint32_t RGB_COLOR_di = 0x465618;
-    rgb.setColor(RGB_COLOR_zhou, LED_Z);
-	rgb.setColor(RGB_COLOR_di, LED_D);
-    rgb.setMode(MODE_BREATH, LED_Z);
+    // uint32_t RGB_COLOR_zhou = 0x151200;
+    // uint32_t RGB_COLOR_di = 0x465618;
+    // rgb.setColor(RGB_COLOR_zhou, LED_Z);
+	// rgb.setColor(RGB_COLOR_di, LED_D);
+    // rgb.setMode(MODE_BREATH, LED_Z);
+    // rgb.setMode(MODE_LIGHT, LED_D);
     rgb.show();
-    rgb.breathStep(getFreqSys, 30);
+    rgb.breathStep(getFreqSys, 50);
 
 
     uint32_t tick = osKernelGetTickCount(); /* 控制任务运行频率的计时 */

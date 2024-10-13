@@ -165,6 +165,32 @@ uint32_t FlashDrv_read(uint32_t Addr, uint8_t *source, uint32_t length)
  
     return  1;
 }
+
+uint32_t Find_Last_NonEmpty_Address(uint32_t startAddr, uint32_t endAddr)
+{
+    uint32_t currentAddr = startAddr;  // 从起始地址开始遍历
+    uint32_t lastNonEmptyAddr = 0xFFFFFFFF;  // 初始化为无效地址，表示没有非空地址
+
+    while (currentAddr < endAddr) {
+        uint32_t data = *(__IO uint32_t *)currentAddr;  // 读取当前地址的32位数据
+
+        if (data != 0xFFFFFFFF) {  // 如果当前地址的内容不是空的（0xFFFFFFFF代表擦除后的空状态）
+            lastNonEmptyAddr = currentAddr;  // 更新最后一个非空地址
+        }
+        currentAddr += 4;  // 每次递增4，确保32位对齐
+    }
+    if(lastNonEmptyAddr == 0xFFFFFFFF){
+        lastNonEmptyAddr = startAddr;
+    }
+
+    return lastNonEmptyAddr;  // 返回最后一个非空地址
+}
+
+uint32_t Read_Flash_Uint32(uint32_t address)
+{
+    // 读取指定地址的 uint32_t 数据
+    return *(__IO uint32_t *)address;
+}
  
- 
+
 /* End of this file */

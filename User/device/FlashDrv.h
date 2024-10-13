@@ -13,15 +13,14 @@
 /* USER CODE END Header */
  
 /* Includes ------------------------------------------------------------------*/
-#ifndef __FLASHDRV_H
-#define __FLASHDRV_H
+#pragma once
  
 /*****************************************************************************/
 /* Includes                                                                  */
 /*****************************************************************************/
 #include "main.h"
  
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif 
     
@@ -36,11 +35,13 @@ extern "C" {
  
 HAL_StatusTypeDef FlashDrv_Write(uint32_t Addr, uint8_t *source, uint32_t length);
 uint32_t FlashDrv_read(uint32_t Addr, uint8_t *source, uint32_t length);
+uint32_t Find_Last_NonEmpty_Address(uint32_t startAddr, uint32_t endAddr);
+uint32_t Read_Flash_Uint32(uint32_t address);
  
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
 #endif   
  
-#endif    /* __FLASHDRV_H */
+
  
  
