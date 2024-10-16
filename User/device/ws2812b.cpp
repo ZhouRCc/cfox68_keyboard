@@ -371,6 +371,7 @@ void WS2812::led_mod_change( led_type_e type) {
     }else {
         setMode(MODE_BREATH, type);
     }
+    show();
 }
 
 // 回调函数
