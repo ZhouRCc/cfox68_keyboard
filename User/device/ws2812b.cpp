@@ -366,12 +366,13 @@ void WS2812::led_mod_change( led_type_e type) {
 
     if(ws_flash.ws_data[type].fields.mode == MODE_BREATH) {
         setMode(MODE_LIGHT, type);
+        show(ws_flash.ws_data[type].fields.color, type);
     }else if(ws_flash.ws_data[type].fields.mode == MODE_LIGHT) {
         setMode(MODE_PRESS, type);
+        show(0x000000, type);
     }else {
         setMode(MODE_BREATH, type);
     }
-    show();
 }
 
 // 回调函数
