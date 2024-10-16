@@ -32,6 +32,15 @@ typedef enum
 
 #define WS_FLASH_LENGTH LED_TYPE_NUM * 4
 
+typedef enum
+{
+    RGB_START = 0xE0,
+    RGB_TOG = 0xE0,
+    RGB_MOD = 0xE1,
+    RGB_COLOR,
+    RGB_TYPE,
+    RGB_NUM,
+}rgb_key_e;
 
 typedef struct
 {

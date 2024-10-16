@@ -26,13 +26,13 @@ void FunctionRgb(void *argument)
 	// rgb.setColor(RGB_COLOR_di, LED_D);
     // rgb.setMode(MODE_BREATH, LED_Z);
     // rgb.setMode(MODE_LIGHT, LED_D);
-    rgb.show();
     rgb.breathStep(getFreqSys, 50);
 
 
     uint32_t tick = osKernelGetTickCount(); /* 控制任务运行频率的计时 */
     while(1)
     {
+        rgb.deal_flags();
         rgb.wsLoop();
         tick += delay_tick; /* 计算下一个唤醒时刻 */
         osDelayUntil(tick); /* 运行结束，等待下一次唤醒 */

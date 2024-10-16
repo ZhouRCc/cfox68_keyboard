@@ -4,6 +4,9 @@
 
 #define MATRIX_ROWS 5
 #define MATRIX_COLS 15
+#ifdef SYS_DEFINE
+#include SYS_DEFINE
+#endif
 
 typedef enum {
     KC_NO = 0x00,  // 无键值
@@ -118,19 +121,6 @@ typedef enum {
 // #define KC_RALT    (1 << 6)  // 右Alt
 // #define KC_RGUI    (1 << 7)  // 右GUI (Windows键)
 
-typedef enum
-{
-    RGB_TOG = 0xE0,
-    RGB_MOD,
-    RGB_RI,
-    RGB_GI,
-    RGB_BI,
-    RGB_RD,
-    RGB_GD,
-    RGB_BD,
-    RGB_LI,
-    RGB_LD,
-}rgb_key_e;
 
 // 定义联合体来存储HID按键报告
 typedef union {
@@ -161,10 +151,13 @@ private:
     bool key_is_modifier(uint8_t key);
     uint8_t get_modifier_mask(uint8_t key);
     void process_and_send_keys();
-    // void process_rgb(uint8_t key);
+    void process_rgb();
     void process_custom_keys(uint8_t key, uint8_t* index);
     
-
+    struct{
+        uint16_t rgb_key_cnt[RGB_NUM - RGB_START];
+        bool rgb_array[RGB_NUM - RGB_START];
+    }rgb_key;
     key_buff_t key_buff;
     HID_Report_Union_TypeDef hid_report; // 按键缓冲区,最多一次发6个普通按键
     // RgbCallback rgb_array[10];

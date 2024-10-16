@@ -11,11 +11,26 @@ led_type_e led_type[LED_NUM] = {
     LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_D,LED_D,LED_D,LED_D,LED_D,LED_D
 };
 
+const uint32_t rgb_value[8] = {0x300030, 0x301520, 0x243020, 0x151200, 0x202020, 0x300000, 0x003000, 0x000030};// RGB颜色预设值
+
+#define RGB_TOG_NUM 6
+#define RGB_TOG_HZ 1
+
 WS2812::WS2812() {
     clear();
-    breath_param.freq_set = 0;
-    breath_param.freq_sys = 0;
-    breath_param.delay_tick = 0;
+
+    rgb_control.rgb_index = 0;
+    rgb_control.rgb_type = LED_Z;
+    rgb_control.rgb_tog_cnt = 0;
+    rgb_control.rgb_tog_tick = 0;
+    rgb_control.need_tog = false;
+
+    //默认频率设置
+    breath_param.freq_set = 50;
+    breath_param.freq_sys = 500;
+    breath_param.delay_tick = breath_param.freq_sys / breath_param.freq_set;
+    rgb_control.rgb_tog_delay = breath_param.freq_sys / RGB_TOG_HZ;
+
 
 }
 
@@ -34,6 +49,12 @@ void WS2812::ws2812Init() {
         ws_flash.ws_data[i].value = Read_Flash_Uint32(ws_flash.flash_addr + i * 4);
     }
     update_pwm();
+    show();
+    for(int i = 0; i < LED_TYPE_NUM; i++) {
+        if(!(ws_flash.ws_data[i].fields.is_on)) {
+            show(0x000000, (led_type_e)i);
+        }
+    }
     
 }
 // WS2812::~WS2812() {
@@ -128,6 +149,13 @@ void WS2812::setMode(ws_mode_e mode, led_type_e type) {
     update_flash();
 }
 
+void WS2812::setMode(ws_mode_e mode) {
+    for (int i = 0; i < LED_TYPE_NUM; i++) {
+        ws_flash.ws_data[i].fields.mode = mode;
+    }
+    update_flash();
+}
+
 void WS2812::setBrightness(int brightness) {
     uint32_t result_color[LED_TYPE_NUM] = {0};
 
@@ -150,6 +178,7 @@ void WS2812::breathStep(uint32_t (*get_freq)(void) ,uint32_t freq) {
     breath_param.freq_set = freq;
     breath_param.freq_sys = get_freq();
     breath_param.delay_tick = breath_param.freq_sys / breath_param.freq_set;
+    rgb_control.rgb_tog_delay = breath_param.freq_sys / RGB_TOG_HZ;
 }
 
 void WS2812::breathingLight(led_type_e type) {
@@ -213,10 +242,47 @@ uint32_t WS2812::scale_color(uint32_t color, uint8_t target_brightness) {
     return (r << 16) | (g << 8) | b;
 }
 
+void WS2812::deal_flags() {
+    thread_flag = osThreadFlagsGet();
+    if(thread_flag >> (RGB_TOG - RGB_START) & 0x01) {
+        led_troggle((led_type_e)rgb_control.rgb_type);
+        update_flash();
+        osThreadFlagsClear((1 << (RGB_TOG - RGB_START)));
+    }else if(thread_flag >> (RGB_MOD - RGB_START) & 0x01) {
+        led_mod_change(LED_Z);// 没想好咋写，先只支持改底灯
+        osThreadFlagsClear((1 << (RGB_MOD - RGB_START)));
+    }else if(thread_flag >> (RGB_COLOR - RGB_START) & 0x01) {
+        setColor(rgb_value[rgb_control.rgb_index], (led_type_e)rgb_control.rgb_type);
+        rgb_control.rgb_index ++;
+        osThreadFlagsClear((1 << (RGB_COLOR - RGB_START)));
+    }else if(thread_flag >> (RGB_TYPE - RGB_START) & 0x01) {
+        led_type_changed();
+        osThreadFlagsClear((1 << (RGB_TYPE - RGB_START)));
+    }else{
+        ;
+    }
+    osThreadFlagsClear(0xffffffff);// 清除所有标志位，一次只允许进行一种更改
+}
+
 void WS2812::wsLoop() {
     for(int i = 0; i < LED_TYPE_NUM; i++) {
-        if(ws_flash.ws_data[i].fields.mode == MODE_BREATH) {
-            breathingLight((led_type_e)i);
+        if(rgb_control.need_tog) {
+            led_tog_loop();
+        }
+        else {
+            if(ws_flash.ws_data[i].fields.is_on) {
+                if(ws_flash.ws_data[i].fields.mode == MODE_BREATH) {
+                    breathingLight((led_type_e)i);
+                }else if(ws_flash.ws_data[i].fields.mode == MODE_PRESS) {
+                    ;
+                }
+                else {
+                    ;
+                }
+            }
+            else {
+                ;
+            }
         }
     }
 }
@@ -237,6 +303,75 @@ void WS2812::update_flash() {
     osMessageQueuePut(robotStruct.msgq.q_flash_send, &msg_flash, 1, 0);
 }
 
+void WS2812::led_troggle( led_type_e type) {
+    if(type > LED_TYPE_NUM) return;
+
+    if(ws_flash.ws_data[type].fields.is_on) {
+        show(0x000000 , type);
+        ws_flash.ws_data[type].fields.is_on = false;
+    }
+    else {
+        show(ws_flash.ws_data[type].fields.color, type);
+        ws_flash.ws_data[type].fields.is_on = true;
+    }
+
+    // update_flash();
+}
+
+void WS2812::led_troggle() {
+    for(int i = 0; i < LED_TYPE_NUM; i++) {
+        
+        if(ws_flash.ws_data[i].fields.is_on) {
+            show(0x000000 , (led_type_e)i);
+            ws_flash.ws_data[i].fields.is_on = false;
+        }
+        else {
+            show(ws_flash.ws_data[i].fields.color,  (led_type_e)i);
+            ws_flash.ws_data[i].fields.is_on = true;
+        }
+    }
+    update_flash();
+}
+
+void WS2812::led_type_changed() {
+    if(rgb_control.rgb_type < LED_TYPE_NUM - 1) {
+        rgb_control.rgb_type ++;
+    }else {
+        rgb_control.rgb_type = LED_Z;
+    }
+    rgb_control.need_tog = true;
+}
+
+void WS2812::led_tog_loop() {
+    if(rgb_control.rgb_tog_cnt < RGB_TOG_NUM) {
+        if(rgb_control.rgb_tog_tick < rgb_control.rgb_tog_delay) {
+            rgb_control.rgb_tog_tick ++;
+        }
+        else {
+            rgb_control.rgb_tog_tick = 0;
+            led_troggle((led_type_e)rgb_control.rgb_type);
+            rgb_control.rgb_tog_cnt ++;
+        }
+    }
+    else {
+        rgb_control.rgb_tog_cnt = 0;
+        rgb_control.rgb_tog_tick = 0;
+        rgb_control.need_tog = false;
+    }
+    
+}
+
+void WS2812::led_mod_change( led_type_e type) {
+    if(type >= LED_TYPE_NUM) return;
+
+    if(ws_flash.ws_data[type].fields.mode == MODE_BREATH) {
+        setMode(MODE_LIGHT, type);
+    }else if(ws_flash.ws_data[type].fields.mode == MODE_LIGHT) {
+        setMode(MODE_PRESS, type);
+    }else {
+        setMode(MODE_BREATH, type);
+    }
+}
 
 // 回调函数
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {

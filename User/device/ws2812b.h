@@ -86,6 +86,8 @@ public:
 
     void setMode(ws_mode_e mode, led_type_e type);//设置指定类型灯的模式
 
+    void setMode(ws_mode_e mode);//设置所有灯的模式
+
     void setBrightness(int brightness);//设置所有灯的亮度
 
     void setBrightness(int brightness, led_type_e type);//设置指定类型灯的亮度
@@ -99,17 +101,34 @@ public:
 
     void wsLoop();
 
+    void deal_flags();
+
 private:
 
     uint32_t pwm_data[RESET_WORD + 24 * LED_NUM + DUMMY_WORD];//pwm数据
     breath_t breath_param;//呼吸灯参数
     ws_flash_t ws_flash;//ws2812b相关flash
     msg_flash_t msg_flash;//发送flash消息队列
+    uint32_t thread_flag = 0;//线程标志
 
     void update_flash();//更新flash
     uint32_t scale_color(uint32_t color, uint8_t target_brightness);//颜色亮度缩放
     void breath_circle(uint8_t* brightness ,uint8_t* increasing);//呼吸灯调整亮度
     void update_pwm();//更新pwm数据
+    void led_mod_change( led_type_e type);//led模式变化
+
+    struct {
+        uint8_t rgb_index;
+        uint8_t rgb_type;
+        uint16_t rgb_tog_delay;
+        uint8_t rgb_tog_cnt;
+        uint16_t rgb_tog_tick;
+        bool need_tog;
+    }rgb_control;//rgb控制
+    void led_troggle( led_type_e type);//led翻转
+    void led_troggle();//led翻转循环
+    void led_type_changed();//led类型变化
+    void led_tog_loop();//led翻转循环
 
     //清空当前颜色
     void clear() {

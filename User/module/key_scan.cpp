@@ -3,6 +3,7 @@
 #include "usbd_hid.h"
 #include <cmsis_os2.h>
 #include "bsp/delay.h"
+#include "task/userTask.h"
 extern USBD_HandleTypeDef hUsbDeviceFS;  // 外部声明USB设备句柄
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -14,11 +15,11 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 {KC_LCTL, KC_LGUI, KC_LALT,KC_NO, KC_NO, KC_SPC, KC_NO,  KC_NO,  KC_NO,  MO_1,    KC_COPY, KC_PSTE, KC_LEFT, KC_DOWN, KC_RGHT}
 },
 {
-{RGB_TOG, KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,   KC_F6,  KC_F7,  KC_F8,  KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_NO,   KC_CAPS},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  RGB_RI, RGB_RD,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   RGB_TOG},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_GI,  RGB_GD, KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_RSET, KC_NO,   KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_BI,  RGB_BD, KC_NO,  KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,   RGB_LI,  KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_COPY, KC_PSTE, KC_NO,   RGB_LD,  KC_NO}
+{RGB_TOG, KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,   KC_F6,  KC_F7,  KC_F8,  KC_F9,   KC_F10,   KC_F11,  KC_F12,  KC_NO,  KC_CAPS},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_NO,   KC_NO,  KC_NO},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_RSET, KC_NO,  KC_NO},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  RGB_TYPE,RGB_COLOR,KC_NO,   KC_NO,   KC_NO,  KC_NO},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_COPY,  KC_PSTE, KC_NO,   KC_NO,  KC_NO}
 }
 };
 
@@ -39,6 +40,7 @@ KeyScan::KeyScan() {
         hid_report.buffer[i] = 0;
     }
     memset(&key_buff, 0, sizeof(key_buff));
+    memset(&rgb_key, 0, sizeof(rgb_key));
 }
 
 // 按键扫描函数
@@ -58,7 +60,8 @@ void KeyScan::operator()() {
                 if(key == MO_1)
                     key_buff.fn_pressed = true;
                 key_buff.col[key_buff.key_count] = col;
-                key_buff.row[key_buff.key_count ++] = row;
+                key_buff.row[key_buff.key_count] = row;
+                key_buff.key_count ++;
             }
             // if(row == 1)
             //     delay_us(20);
@@ -74,6 +77,7 @@ void KeyScan::operator()() {
 
 void KeyScan::process_and_send_keys() {
     uint8_t keys_index = 0;  // 普通按键的索引
+    memset(rgb_key.rgb_array, 0, sizeof(rgb_key.rgb_array));//清空rgb数组
     // 遍历缓冲区中的按键
     for (int i = 0; i < key_buff.key_count; i++) {
         uint8_t key = keymaps[key_buff.fn_pressed][key_buff.row[i]][key_buff.col[i]];
@@ -86,8 +90,8 @@ void KeyScan::process_and_send_keys() {
         {
             process_custom_keys(key,&keys_index);
         }
-        else if(key >= RGB_TOG && key <= RGB_LD) {
-            // process_rgb(key);
+        else if(key >= RGB_START && key <= RGB_NUM) {
+            rgb_key.rgb_array[key - RGB_START] = true;
         }
         else{
             // 如果是普通按键，存入报告数组（最多6个按键）
@@ -98,6 +102,7 @@ void KeyScan::process_and_send_keys() {
     }
 
     send_report();
+    process_rgb();
 
 }
 
@@ -109,6 +114,25 @@ void KeyScan::send_report() {
     hid_report.report.modifier = 0;
     for (int i = 0; i < 6; i++) {
         hid_report.report.keys[i] = 0;
+    }
+}
+
+void KeyScan::process_rgb()
+{
+    for(int i = 0; i < RGB_NUM - RGB_START; i++) {
+        if(rgb_key.rgb_array[i]) {
+            if(rgb_key.rgb_key_cnt[i] <= 100){
+                rgb_key.rgb_key_cnt[i] ++;
+            }else if(rgb_key.rgb_key_cnt[i] > 100 && rgb_key.rgb_key_cnt[i] <= 1000){
+                osThreadFlagsSet(robotStruct.thread.rgb, (1 << i));
+                rgb_key.rgb_key_cnt[i] = 1200;
+            }else{
+                ;
+            }
+        }
+        else {
+            rgb_key.rgb_key_cnt[i] = 0;
+        }
     }
 }
 
