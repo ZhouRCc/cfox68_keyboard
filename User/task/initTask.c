@@ -48,6 +48,8 @@ void initFunction(void *argument)
 
     robotStruct.msgq.q_flash_send =
         osMessageQueueNew(1, sizeof(msg_flash_t), NULL);
+    robotStruct.msgq.q_key_press =
+        osMessageQueueNew(1, sizeof(msg_key_t), NULL);
     
     osKernelUnlock();
     osThreadTerminate(osThreadGetId()); /* 结束自身 */

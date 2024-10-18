@@ -30,6 +30,7 @@ typedef struct
     struct
     {
         osMessageQueueId_t q_flash_send; 
+        osMessageQueueId_t q_key_press;
     }msgq;
     // /*事件组*/
     // struct

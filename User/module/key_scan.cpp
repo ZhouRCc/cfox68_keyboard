@@ -62,9 +62,12 @@ void KeyScan::operator()() {
                 key_buff.col[key_buff.key_count] = col;
                 key_buff.row[key_buff.key_count] = row;
                 key_buff.key_count ++;
+                key_press_buffer[row][col] = true;
             }
-            // if(row == 1)
-            //     delay_us(20);
+            else
+            {
+                key_press_buffer[row][col] = false;
+            }
         }
 
         // 恢复当前列引脚为低电平
@@ -103,7 +106,29 @@ void KeyScan::process_and_send_keys() {
 
     send_report();
     process_rgb();
+    update_msg();
+}
 
+void KeyScan::update_msg() {
+    int key_index = 0;
+    for (int r = 0; r < MATRIX_ROWS; r++) {
+        for (int c = 0; c < MATRIX_COLS; c++) {
+            if(key_press_buffer[r][c])
+            {
+                msg_key[key_index] = true;
+            }
+            if (keymaps[0][r][c] != KC_NO) {
+                key_index ++;
+            }
+        }
+    }
+    msg_send();
+}
+
+void KeyScan::msg_send() {
+    osMessageQueueReset(robotStruct.msgq.q_key_press);
+    osMessageQueuePut(robotStruct.msgq.q_key_press,msg_key,1,0);
+    memset(msg_key,0,sizeof(msg_key));
 }
 
 void KeyScan::send_report() {

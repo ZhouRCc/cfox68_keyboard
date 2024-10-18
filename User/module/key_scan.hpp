@@ -153,6 +153,11 @@ private:
     void process_and_send_keys();
     void process_rgb();
     void process_custom_keys(uint8_t key, uint8_t* index);
+    void msg_send();
+    void update_msg();
+
+    msg_key_t msg_key;
+    bool key_press_buffer[MATRIX_ROWS][MATRIX_COLS] = {0};
     
     struct{
         uint16_t rgb_key_cnt[RGB_NUM - RGB_START];

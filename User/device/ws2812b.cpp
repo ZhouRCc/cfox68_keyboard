@@ -1,7 +1,7 @@
 #include "device/ws2812b.h"
 #include "device/FlashDrv.h"
 #include "task/userTask.h"
-
+#include <string.h>
 // 设置所有LED的类型
 led_type_e led_type[LED_NUM] = {
     LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,LED_Z,
@@ -31,6 +31,11 @@ WS2812::WS2812() {
     breath_param.delay_tick = breath_param.freq_sys / breath_param.freq_set;
     rgb_control.rgb_tog_delay = breath_param.freq_sys / RGB_TOG_HZ;
 
+    memset(&press_pram,0,sizeof(press_pram));
+    *press_pram.prio = 1;
+    press_pram.press_delay = 520;
+
+
 
 }
 
@@ -53,6 +58,9 @@ void WS2812::ws2812Init() {
     for(int i = 0; i < LED_TYPE_NUM; i++) {
         if(!(ws_flash.ws_data[i].fields.is_on)) {
             show(0x000000, (led_type_e)i);
+        }
+        if(ws_flash.ws_data[0].fields.mode == MODE_PRESS) {
+            show(0x000000, LED_Z);
         }
     }
     
@@ -118,6 +126,20 @@ void WS2812::show(uint32_t color, led_type_e type) {
                 pwm_data[RESET_WORD + (i * 24 + (23 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
             }
         }
+    }
+    HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
+}
+
+void WS2812::show(uint32_t color, uint16_t dot) {
+    // 设置颜色值到pwm_data
+    for (int j = 15; j >= 8; j--) { // G (绿)
+        pwm_data[RESET_WORD + (dot * 24 + (15 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+    }
+    for (int j = 23; j >= 16; j--) { // R (红)
+        pwm_data[RESET_WORD + (dot * 24 + (31 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
+    }
+    for (int j = 7; j >= 0; j--) { // B (蓝)
+        pwm_data[RESET_WORD + (dot * 24 + (23 - j))] = ((color >> j) & 0x01) ? WS_H : WS_L;
     }
     HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_4, pwm_data, RESET_WORD + 24 * LED_NUM + DUMMY_WORD);
 }
@@ -274,7 +296,7 @@ void WS2812::wsLoop() {
                 if(ws_flash.ws_data[i].fields.mode == MODE_BREATH) {
                     breathingLight((led_type_e)i);
                 }else if(ws_flash.ws_data[i].fields.mode == MODE_PRESS) {
-                    ;
+                    press_loop();
                 }
                 else {
                     ;
@@ -283,6 +305,45 @@ void WS2812::wsLoop() {
             else {
                 ;
             }
+        }
+    }
+}
+
+
+void WS2812::press_loop() {
+    osMessageQueueGet(robotStruct.msgq.q_key_press,press_pram.msg_key,press_pram.prio,0);
+    for(int i = 0; i < KEY_NUM; i ++) {
+        if(press_pram.msg_key[i])
+        {
+            if(press_pram.need_light[i]) {
+                press_pram.press_tick[i] = 1;
+            }else {
+                press_pram.need_light[i] = true;
+                press_pram.press_tick[i] = 0;
+            }
+        }
+    }
+    for(int i = 0; i < LED_NUM; i ++)
+    {
+        int led_d_num = 0;
+        if(led_type[i] == LED_Z) {
+            if(press_pram.need_light[i - led_d_num]) {
+                if(press_pram.press_tick[i - led_d_num] == 0) {
+                    show(ws_flash.ws_data[LED_Z].fields.color,i);
+                    press_pram.press_tick[i - led_d_num] ++;
+                }else if(press_pram.press_tick[i - led_d_num] < press_pram.press_delay) {
+                    press_pram.press_tick[i - led_d_num] ++;
+                }else {
+                    show(0x000000,i);
+                    press_pram.press_tick[i - led_d_num] = 0;
+                    press_pram.need_light[i - led_d_num] = false;
+                }
+            }else {
+                ;
+            }
+        }
+        else {
+            led_d_num ++;
         }
     }
 }
@@ -369,7 +430,10 @@ void WS2812::led_mod_change( led_type_e type) {
         show(ws_flash.ws_data[type].fields.color, type);
     }else if(ws_flash.ws_data[type].fields.mode == MODE_LIGHT) {
         setMode(MODE_PRESS, type);
-        show(0x000000, type);
+        if(type == LED_Z)
+        {
+            show(0x000000, type);
+        }
     }else {
         setMode(MODE_BREATH, type);
     }

@@ -48,4 +48,5 @@ typedef struct
     uint8_t data[WS_FLASH_LENGTH];
 }msg_flash_t;
 
-
+#define KEY_NUM 68
+typedef uint8_t msg_key_t[KEY_NUM];

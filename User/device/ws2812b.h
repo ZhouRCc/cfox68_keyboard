@@ -8,7 +8,6 @@
 #endif
 
 #include "FreeRTOS.h"
-#include "cmsis_os2.h"
 
 
 #define LED_NUM 74
@@ -84,6 +83,8 @@ public:
 
     void show();//根据current_color更新所有灯的颜色
 
+    void show(uint32_t color, uint16_t dot);//根据color更新指定点的颜色
+
     void setMode(ws_mode_e mode, led_type_e type);//设置指定类型灯的模式
 
     void setMode(ws_mode_e mode);//设置所有灯的模式
@@ -129,6 +130,15 @@ private:
     void led_troggle();//led翻转循环
     void led_type_changed();//led类型变化
     void led_tog_loop();//led翻转循环
+
+    struct{
+        uint16_t press_delay;
+        uint16_t press_tick[KEY_NUM];
+        bool need_light[KEY_NUM];
+        msg_key_t msg_key;
+        uint8_t* prio;
+    }press_pram;//按下亮灯参数
+    void press_loop();//按下亮灯模式
 
     //清空当前颜色
     void clear() {
