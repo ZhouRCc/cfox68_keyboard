@@ -77,6 +77,10 @@ public:
 
     void setColor(uint32_t color, led_type_e type);//设置指定类型灯的颜色
 
+    void setColor_no_pwm(uint32_t color, led_type_e type);//设置指定类型灯的颜色，不更新pwm
+
+    void setColor_show(uint32_t color, led_type_e type);//设置指定类型灯的颜色，同时更新显示
+
     void show(uint32_t color, led_type_e type);//根据color更新指定类型灯的颜色，不更新current_color
 
     void show(uint32_t color);//根据color更新所有灯的颜色，不更新current_color

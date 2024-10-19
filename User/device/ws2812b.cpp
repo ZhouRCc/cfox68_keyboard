@@ -78,6 +78,25 @@ void WS2812::setColor(uint32_t color, led_type_e type) {
     update_pwm();
 }
 
+void WS2812::setColor_no_pwm(uint32_t color, led_type_e type) {
+    // 确保类型索引在允许的范围内
+    if ( type >= LED_TYPE_NUM) return;
+    
+    // 设置该类型对应的颜色
+    ws_flash.ws_data[type].fields.color = color;
+    update_flash();
+}
+
+void WS2812::setColor_show(uint32_t color, led_type_e type) {
+    // 确保类型索引在允许的范围内
+    if ( type >= LED_TYPE_NUM) return;
+    
+    // 设置该类型对应的颜色
+    ws_flash.ws_data[type].fields.color = color;
+    update_flash();
+    update_pwm();
+    show();
+}
 
 void WS2812::setColor(uint32_t color) {
     int i = 0;
@@ -274,8 +293,23 @@ void WS2812::deal_flags() {
         led_mod_change(LED_Z);// 没想好咋写，先只支持改底灯
         osThreadFlagsClear((1 << (RGB_MOD - RGB_START)));
     }else if(thread_flag >> (RGB_COLOR - RGB_START) & 0x01) {
-        setColor(rgb_value[rgb_control.rgb_index], (led_type_e)rgb_control.rgb_type);
-        rgb_control.rgb_index ++;
+        if(ws_flash.ws_data[rgb_control.rgb_type].fields.mode == MODE_BREATH) {
+            setColor(rgb_value[rgb_control.rgb_index], (led_type_e)rgb_control.rgb_type);
+        }else if(ws_flash.ws_data[rgb_control.rgb_type].fields.mode == MODE_LIGHT) {
+            setColor_show(rgb_value[rgb_control.rgb_index], ( led_type_e)rgb_control.rgb_type);
+        }else if(ws_flash.ws_data[rgb_control.rgb_type].fields.mode == MODE_PRESS) {
+            setColor_no_pwm(rgb_value[rgb_control.rgb_index], ( led_type_e)rgb_control.rgb_type);
+        }else{
+            ;
+        }
+        if(rgb_control.rgb_index < 7)
+        {
+            rgb_control.rgb_index ++;
+        }
+        else
+        {
+            rgb_control.rgb_index = 0;
+        }
         osThreadFlagsClear((1 << (RGB_COLOR - RGB_START)));
     }else if(thread_flag >> (RGB_TYPE - RGB_START) & 0x01) {
         led_type_changed();
