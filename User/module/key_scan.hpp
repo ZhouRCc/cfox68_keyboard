@@ -100,6 +100,11 @@ typedef enum {
     KC_COPY = 0xFE, // 自定义键: 复制
     KC_PSTE = 0xFC,  // 自定义键: 粘贴
     KC_RSET = 0xFB, // 自定义键: 重启
+    KC_VOL_U = 0xFA, // 自定义键: 音量+
+    KC_VOL_D = 0xF9, // 自定义键: 音量-
+    KC_MUTE = 0xF8, // 自定义键: 音量静音
+    KC_BRI_U = 0xF7, // 自定义键: 亮度+
+    KC_BRI_D = 0xF6,  // 自定义键: 亮度-
 
     KC_LCTL = 0x70, // 左Ctrl
     KC_LSFT = 0x71, // 左Shift
@@ -120,16 +125,21 @@ typedef enum {
 // #define KC_RSFT    (1 << 5)  // 右Shift
 // #define KC_RALT    (1 << 6)  // 右Alt
 // #define KC_RGUI    (1 << 7)  // 右GUI (Windows键)
-
+typedef enum{
+    REPORT_ID_KEY = 0x01,
+    REPORT_ID_AUDIO = 0x02,
+    REPORT_ID_BRI = 0x03
+}report_id_e;
 
 // 定义联合体来存储HID按键报告
 typedef union {
     struct {
+        uint8_t report_id; // 报告ID
         uint8_t modifier;  // 修饰键字节
         uint8_t reserved;  // 保留字节，总是0
         uint8_t keys[6];   // 同时按下的6个普通按键
     } report;
-    uint8_t buffer[8];  // 字节数组，用于发送
+    uint8_t buffer[9];  // 字节数组，用于发送
 } HID_Report_Union_TypeDef;
 
 struct key_buff_t
@@ -165,6 +175,20 @@ private:
     }rgb_key;
     key_buff_t key_buff;
     HID_Report_Union_TypeDef hid_report; // 按键缓冲区,最多一次发6个普通按键
+    union{
+        struct{
+            uint8_t report_id;
+            uint8_t key;
+        }hid_audio;
+        uint8_t buffer[2];
+    }audio_u;
+    union{
+        struct{
+            uint8_t report_id;
+            uint8_t key;
+        }hid_bri;
+        uint8_t buffer[2];
+    }bri_u;
     // RgbCallback rgb_array[10];
 };
 

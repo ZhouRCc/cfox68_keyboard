@@ -15,11 +15,11 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 {KC_LCTL, KC_LGUI, KC_LALT,KC_NO, KC_NO, KC_SPC, KC_NO,  KC_NO,  KC_NO,  MO_1,    KC_COPY, KC_PSTE, KC_LEFT, KC_DOWN, KC_RGHT}
 },
 {
-{RGB_TOG, KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,   KC_F6,  KC_F7,  KC_F8,  KC_F9,   KC_F10,   KC_F11,  KC_F12,  KC_NO,  KC_CAPS},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_NO,   KC_NO,  KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_RSET, KC_NO,  KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  RGB_TYPE,RGB_COLOR,KC_NO,   KC_NO,   KC_NO,  KC_NO},
-{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_COPY,  KC_PSTE, KC_NO,   KC_NO,  KC_NO}
+{RGB_TOG, KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,   KC_F6,  KC_F7,  KC_F8,  KC_F9,   KC_F10,   KC_F11,  KC_F12,  KC_NO,    KC_CAPS},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_NO,   KC_NO,    KC_MUTE},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,    KC_NO,   KC_RSET, KC_NO,    KC_NO},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_NO,  KC_NO,  KC_NO,  RGB_TYPE,RGB_COLOR,KC_NO,   KC_NO,   KC_VOL_U, KC_NO},
+{KC_NO,   KC_NO,  KC_NO,  KC_NO,  KC_NO,  RGB_MOD, KC_NO,  KC_NO,  KC_NO,  KC_NO,   KC_COPY,  KC_PSTE, KC_BRI_D,KC_VOL_D, KC_BRI_U}
 }
 };
 
@@ -41,6 +41,11 @@ KeyScan::KeyScan() {
     }
     memset(&key_buff, 0, sizeof(key_buff));
     memset(&rgb_key, 0, sizeof(rgb_key));
+    hid_report.report.report_id = REPORT_ID_KEY;
+    audio_u.hid_audio.report_id = REPORT_ID_AUDIO;
+    audio_u.hid_audio.key = 0;
+    bri_u.hid_bri.report_id = REPORT_ID_BRI;
+    bri_u.hid_bri.key = 0;
 }
 
 // 按键扫描函数
@@ -89,7 +94,7 @@ void KeyScan::process_and_send_keys() {
             // 如果是修饰键，将其添加到修饰键字节中
             hid_report.report.modifier |= get_modifier_mask(key);
         } 
-        else if(key >= KC_RSET)
+        else if(key >= KC_BRI_D)
         {
             process_custom_keys(key,&keys_index);
         }
@@ -132,14 +137,34 @@ void KeyScan::msg_send() {
 }
 
 void KeyScan::send_report() {
-    // 通过联合体的字节数组buffer发送USB HID报告
-    USBD_HID_SendReport(&hUsbDeviceFS, hid_report.buffer, sizeof(hid_report.buffer));
-    memset(&key_buff, 0, sizeof(key_buff));
-    // 清空当前的修饰键和按键数组
-    hid_report.report.modifier = 0;
-    for (int i = 0; i < 6; i++) {
-        hid_report.report.keys[i] = 0;
+    static uint8_t report_cnt = 0;
+    switch(report_cnt) {
+        case 0:
+            // 通过联合体的字节数组buffer发送USB HID报告
+            USBD_HID_SendReport(&hUsbDeviceFS, hid_report.buffer, sizeof(hid_report.buffer));
+            memset(&key_buff, 0, sizeof(key_buff));
+            // 清空当前的修饰键和按键数组
+            hid_report.report.modifier = 0;
+            for (int i = 0; i < 6; i++) {
+                hid_report.report.keys[i] = 0;
+            }
+            report_cnt ++;
+            break;
+        case 1:
+            USBD_HID_SendReport(&hUsbDeviceFS, audio_u.buffer, sizeof(audio_u.buffer));
+            audio_u.hid_audio.key = 0;
+            report_cnt ++;
+            break;
+        case 2:
+            USBD_HID_SendReport(&hUsbDeviceFS, bri_u.buffer, sizeof(bri_u.buffer));
+            bri_u.hid_bri.key = 0;
+            report_cnt = 0;
+            break;
+        default:
+            report_cnt = 0;
+            break;
     }
+    
 }
 
 void KeyScan::process_rgb()
@@ -202,6 +227,23 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
             break;
         case KC_RSET:
             HAL_NVIC_SystemReset();
+            break;
+        case KC_VOL_D:
+            audio_u.hid_audio.key = 0x02;
+            break;
+        case KC_VOL_U:
+            audio_u.hid_audio.key = 0x01;
+            break;
+        case KC_MUTE:
+            audio_u.hid_audio.key = 0x04;
+            break;
+        case KC_BRI_D:
+            bri_u.hid_bri.key = 0x02;
+            break;
+        case KC_BRI_U:
+            bri_u.hid_bri.key = 0x01;
+            break;
+        default:
             break;
     }
 }
