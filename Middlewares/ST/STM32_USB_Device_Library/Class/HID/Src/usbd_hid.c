@@ -219,9 +219,11 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
 
 __ALIGN_BEGIN static uint8_t HID_Keyboard_ReportDesc[HID_KEY_REPORT_DESC_SIZE] __ALIGN_END =
 {
+  //键盘
   0x05, 0x01, // USAGE_PAGE (Generic Desktop)
   0x09, 0x06, // USAGE (Keyboard)
   0xa1, 0x01, // COLLECTION (Application)
+  0x85, 0x01, // REPORT_ID (1)
   0x05, 0x07, // USAGE_PAGE (Keyboard)
   0x19, 0xe0, // USAGE_MINIMUM (Keyboard LeftControl)
   0x29, 0xe7, // USAGE_MAXIMUM (Keyboard Right GUI)
@@ -250,8 +252,42 @@ __ALIGN_BEGIN static uint8_t HID_Keyboard_ReportDesc[HID_KEY_REPORT_DESC_SIZE] _
   0x19, 0x00, // USAGE_MINIMUM (Reserved (no event indicated))
   0x29, 0x65, // USAGE_MAXIMUM (Keyboard Application)
   0x81, 0x00, // INPUT (Data,Ary,Abs)
-  0xc0        // END_COLLECTION
+  0xc0,       // END_COLLECTION
+  //音频
+  0x05, 0x0C,       // Usage Page (Consumer)
+  0x09, 0x01,       // Usage (Consumer Control)
+  0xA1, 0x01,       // Collection (Application)
+  0x85, 0x02,       // Report ID (2 for Audio Control)
+  0x09, 0xE9,       // Usage (Volume Up)
+  0x09, 0xEA,       // Usage (Volume Down)
+  0x09, 0xE2,       // Usage (Mute)
+  0x15, 0x00,       // Logical Minimum (0)
+  0x25, 0x01,       // Logical Maximum (1)
+  0x75, 0x01,       // Report Size (1)
+  0x95, 0x03,       // Report Count (3)
+  0x81, 0x02,       // Input (Data, Var, Abs)
+  0x75, 0x05,       // Report Size (5) - Padding
+  0x95, 0x01,       // Report Count (1)
+  0x81, 0x03,       // Input (Cnst, Var, Abs)
+  0xC0,             // End Collection
+  //屏幕亮度
+  0x05, 0x0C,       // USAGE_PAGE (Consumer Devices)
+  0x09, 0x01,       // USAGE (Consumer Control)
+  0xA1, 0x01,       // COLLECTION (Application)
+  0x85, 0x03,       // REPORT_ID (3)
+  0x09, 0x6F,       // USAGE (Brightness Increment)
+  0x09, 0x70,       // USAGE (Brightness Decrement)
+  0x15, 0x00,       // LOGICAL_MINIMUM (0)
+  0x25, 0x01,       // LOGICAL_MAXIMUM (1)
+  0x75, 0x01,       // REPORT_SIZE (1)
+  0x95, 0x02,       // REPORT_COUNT (2)
+  0x81, 0x02,       // INPUT (Data,Var,Abs)
+  0x95, 0x01,       // REPORT_COUNT (1)
+  0x75, 0x06,       // REPORT_SIZE (6)
+  0x81, 0x03,       // INPUT (Constant)
+  0xC0             // END_COLLECTION
 };
+
 
 static uint8_t HIDInEpAdd = HID_EPIN_ADDR;
 
