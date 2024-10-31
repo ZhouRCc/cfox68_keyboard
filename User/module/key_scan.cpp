@@ -84,6 +84,7 @@ void KeyScan::operator()() {
 }
 
 void KeyScan::process_and_send_keys() {
+    bool have_custom_keys = false;
     uint8_t keys_index = 0;  // 普通按键的索引
     memset(rgb_key.rgb_array, 0, sizeof(rgb_key.rgb_array));//清空rgb数组
     // 遍历缓冲区中的按键
@@ -94,8 +95,9 @@ void KeyScan::process_and_send_keys() {
             // 如果是修饰键，将其添加到修饰键字节中
             hid_report.report.modifier |= get_modifier_mask(key);
         } 
-        else if(key >= KC_BRI_D)
+        else if(key > KC_CUSTOM)
         {
+            have_custom_keys = true;
             process_custom_keys(key,&keys_index);
         }
         else if(key >= RGB_START && key <= RGB_NUM) {
@@ -108,10 +110,26 @@ void KeyScan::process_and_send_keys() {
             }
         }
     }
-
+    if(!have_custom_keys)
+    {
+        report_cnt =0;
+        bri_cnt[0] = 0;
+        bri_cnt[1] = 0;
+        audio_cnt[1] = 0;
+        audio_cnt[0] = 0;
+        audio_cnt[2] = 0;
+    }
+    if(last_report == 1 && report_cnt != 1){
+        report_cnt = 3;
+    }else if(last_report == 2 && report_cnt != 2){
+        report_cnt = 4;
+    }else{
+        ;
+    }
     send_report();
     process_rgb();
     update_msg();
+
 }
 
 void KeyScan::update_msg() {
@@ -137,7 +155,6 @@ void KeyScan::msg_send() {
 }
 
 void KeyScan::send_report() {
-    static uint8_t report_cnt = 0;
     switch(report_cnt) {
         case 0:
             // 通过联合体的字节数组buffer发送USB HID报告
@@ -148,23 +165,30 @@ void KeyScan::send_report() {
             for (int i = 0; i < 6; i++) {
                 hid_report.report.keys[i] = 0;
             }
-            report_cnt ++;
             break;
         case 1:
             USBD_HID_SendReport(&hUsbDeviceFS, audio_u.buffer, sizeof(audio_u.buffer));
             audio_u.hid_audio.key = 0;
-            report_cnt ++;
             break;
         case 2:
             USBD_HID_SendReport(&hUsbDeviceFS, bri_u.buffer, sizeof(bri_u.buffer));
             bri_u.hid_bri.key = 0;
+            break;
+        case 3:
+            audio_u.hid_audio.key = 0;
+            USBD_HID_SendReport(&hUsbDeviceFS, audio_u.buffer, sizeof(audio_u.buffer));
+            report_cnt = 0;
+            break;
+        case 4:
+            bri_u.hid_bri.key = 0;
+            USBD_HID_SendReport(&hUsbDeviceFS, bri_u.buffer, sizeof(bri_u.buffer));
             report_cnt = 0;
             break;
         default:
             report_cnt = 0;
             break;
     }
-    
+    last_report = report_cnt;
 }
 
 void KeyScan::process_rgb()
@@ -209,18 +233,21 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
     switch (key)
     {
         case KC_PSTE:
+            report_cnt =0;
             if(key_buff.fn_pressed) 
                 hid_report.report.modifier |= get_modifier_mask(KC_RSFT);
             hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
             hid_report.report.keys[*index ++] = KC_V;
             break;
         case KC_COPY:
+            report_cnt =0;
             if(key_buff.fn_pressed) 
                 hid_report.report.modifier |= get_modifier_mask(KC_RSFT);
             hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
             hid_report.report.keys[*index ++] = KC_C;
             break;
         case KC_SHELL:
+            report_cnt =0;
             hid_report.report.modifier |= get_modifier_mask(KC_LALT);
             hid_report.report.modifier |= get_modifier_mask(KC_LCTL);
             hid_report.report.keys[*index ++] = KC_T;
@@ -229,19 +256,93 @@ void KeyScan::process_custom_keys(uint8_t key, uint8_t* index) {
             HAL_NVIC_SystemReset();
             break;
         case KC_VOL_D:
-            audio_u.hid_audio.key = 0x02;
+            report_cnt = 1;
+            audio_cnt[1] = 0;
+            audio_cnt[2] = 0;
+            bri_cnt[0] = 0;
+            bri_cnt[1] = 0;
+            if(audio_cnt[0] < 16000){
+                audio_cnt[0] ++;
+            }else {
+                audio_cnt[0] = 0;
+            }
+            if(audio_cnt[0] == 3){
+                audio_u.hid_audio.key = 0x02;
+            }else if(audio_cnt[0] > 200){
+                audio_u.hid_audio.key = 0x02;
+            }else{
+                audio_u.hid_audio.key = 0x00;
+            }
             break;
         case KC_VOL_U:
-            audio_u.hid_audio.key = 0x01;
+            report_cnt = 1;
+            audio_cnt[0] = 0;
+            audio_cnt[2] = 0;
+            bri_cnt[0] = 0;
+            bri_cnt[1] = 0;
+            if(audio_cnt[1] < 16000){
+                audio_cnt[1] ++;
+            }else {
+                audio_cnt[1] = 0;
+            }
+            if(audio_cnt[1] == 3){
+                audio_u.hid_audio.key = 0x01;
+            }else if(audio_cnt[1] > 200){
+                audio_u.hid_audio.key = 0x01;
+            }else{
+                audio_u.hid_audio.key = 0x00;
+            }
             break;
         case KC_MUTE:
-            audio_u.hid_audio.key = 0x04;
+            report_cnt = 1;
+            audio_cnt[1] = 0;
+            audio_cnt[0] = 0;
+            bri_cnt[0] = 0;
+            bri_cnt[1] = 0;
+            if(audio_cnt[2] == 0){
+                audio_u.hid_audio.key = 0x04;
+            }else {
+                audio_u.hid_audio.key = 0x00;
+                audio_cnt[2] = 300;
+            }
             break;
         case KC_BRI_D:
-            bri_u.hid_bri.key = 0x02;
+            report_cnt = 2;
+            bri_cnt[1] = 0;
+            audio_cnt[1] = 0;
+            audio_cnt[0] = 0;
+            audio_cnt[2] = 0;
+            if(bri_cnt[0] < 16000){
+                bri_cnt[0] ++;
+            }else{
+                bri_cnt[0] = 0;
+            }
+            if(bri_cnt[0] == 3){
+                bri_u.hid_bri.key = 0x02;
+            }else if(bri_cnt[0] > 200){
+                bri_u.hid_bri.key = 0x02;
+            }else{
+                bri_u.hid_bri.key = 0x00;
+            }
             break;
         case KC_BRI_U:
-            bri_u.hid_bri.key = 0x01;
+            report_cnt = 2;
+            bri_cnt[0] = 0;
+            audio_cnt[1] = 0;
+            audio_cnt[0] = 0;
+            audio_cnt[2] = 0;
+            if(bri_cnt[1] < 16000){
+                bri_cnt[1] ++;
+            }else{
+                bri_cnt[1] = 0;
+            }
+            if(bri_cnt[1] == 3){
+                bri_u.hid_bri.key = 0x01;
+            }else if(bri_cnt[1] > 200){
+                bri_u.hid_bri.key = 0x01;
+            }else{
+                bri_u.hid_bri.key = 0x00;
+            }
             break;
         default:
             break;

@@ -105,6 +105,7 @@ typedef enum {
     KC_MUTE = 0xF8, // 自定义键: 音量静音
     KC_BRI_U = 0xF7, // 自定义键: 亮度+
     KC_BRI_D = 0xF6,  // 自定义键: 亮度-
+    KC_CUSTOM = 0xF5, // 自定义键起始
 
     KC_LCTL = 0x70, // 左Ctrl
     KC_LSFT = 0x71, // 左Shift
@@ -182,6 +183,7 @@ private:
         }hid_audio;
         uint8_t buffer[2];
     }audio_u;
+    uint16_t audio_cnt[3] = {0};
     union{
         struct{
             uint8_t report_id;
@@ -189,6 +191,9 @@ private:
         }hid_bri;
         uint8_t buffer[2];
     }bri_u;
+    uint16_t bri_cnt[2] = {0};
+    uint8_t report_cnt = 0;
+    uint8_t last_report = 0;
     // RgbCallback rgb_array[10];
 };
 
