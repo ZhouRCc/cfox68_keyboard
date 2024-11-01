@@ -138,7 +138,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ] __ALIGN_E
   USB_DESC_TYPE_CONFIGURATION,                        /* bDescriptorType: Configuration */
   USB_HID_CONFIG_DESC_SIZ,                            /* wTotalLength: Bytes returned */
   0x00,
-  0x01,                                               /* bNumInterfaces: 1 interface */
+  0x02,                                               /* bNumInterfaces: 2 interfaces */
   0x01,                                               /* bConfigurationValue: Configuration value */
   0x00,                                               /* iConfiguration: Index of string descriptor
                                                          describing the configuration */
@@ -180,9 +180,40 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ] __ALIGN_E
   0x03,                                               /* bmAttributes: Interrupt endpoint */
   HID_EPIN_SIZE,                                      /* wMaxPacketSize: 64 Bytes max */
   0x00,
-  HID_FS_BINTERVAL,                                   /* bInterval: Polling Interval 10ms一次 */
+  HID_FS_BINTERVAL,                                   /* bInterval: Polling Interval */
   /* 34 */
+  /************** Descriptor of audio interface ****************/
+  0x09,                                               /* bLength: Interface Descriptor size */
+  USB_DESC_TYPE_INTERFACE,                            /* bDescriptorType: Interface descriptor type */
+  0x01,                                               /* bInterfaceNumber: Number of Interface */
+  0x00,                                               /* bAlternateSetting: Alternate setting */
+  0x01,                                               /* bNumEndpoints */
+  0x03,                                               /* bInterfaceClass: HID */
+  0x00,                                               /* bInterfaceSubClass : 0=no boot */
+  0x00,                                               /* nInterfaceProtocol : None */
+  0x00,                                               /* iInterface: Index of string descriptor */
+  /******************** Descriptor of Audio/Brightness HID ********************/
+  /* 43 */
+  0x09,                                               /* bLength: HID Descriptor size */
+  HID_DESCRIPTOR_TYPE,                                /* bDescriptorType: HID */
+  0x11,                                               /* bcdHID: HID Class Spec release number */
+  0x01,
+  0x00,                                               /* bCountryCode: Hardware target country */
+  0x01,                                               /* bNumDescriptors: Number of HID class descriptors to follow */
+  0x22,                                               /* bDescriptorType */
+  HID_AUDIO_REPORT_DESC_SIZE,                         /* wDescriptorLength: Length of Audio/Brightness Report descriptor */
+  0x00,
+  /******************** Descriptor of Audio/Brightness Endpoint ********************/
+  /* 52 */
+  0x07,                                               /* bLength: Endpoint Descriptor size */
+  USB_DESC_TYPE_ENDPOINT,                             /* bDescriptorType */
+  HID_EPIN_ADDR_AUDIO,                                  /* bEndpointAddress: Endpoint Address (IN) */
+  0x03,                                               /* bmAttributes: Interrupt endpoint */
+  HID_EPIN_SIZE,                                      /* wMaxPacketSize */
+  0x00,
+  HID_FS_BINTERVAL,                                   /* bInterval: Polling Interval */
 };
+
 #endif /* USE_USBD_COMPOSITE  */
 
 /* USB HID device Configuration Descriptor */
@@ -197,6 +228,19 @@ __ALIGN_BEGIN static uint8_t USBD_HID_Desc[USB_HID_DESC_SIZ] __ALIGN_END =
   0x01,                                               /* bNumDescriptors: Number of HID class descriptors to follow */
   0x22,                                               /* bDescriptorType */
   HID_KEY_REPORT_DESC_SIZE,                         /* wItemLength: Total length of Report descriptor */
+  0x00,
+};
+
+__ALIGN_BEGIN static uint8_t USBD_HID_Audio_Desc[USB_HID_DESC_SIZ] __ALIGN_END =
+{
+  0x09,                         /* bLength: HID Descriptor size */
+  HID_DESCRIPTOR_TYPE,          /* bDescriptorType: HID */
+  0x11,                         /* bcdHID: HID Class Spec release number */
+  0x01,
+  0x21,                         /* bCountryCode: Hardware target country */
+  0x01,                         /* bNumDescriptors: Number of HID class descriptors to follow */
+  0x22,                         /* bDescriptorType */
+  HID_AUDIO_REPORT_DESC_SIZE,   /* wItemLength: Total length of Report descriptor */
   0x00,
 };
 
@@ -216,7 +260,41 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   0x00,
 };
 #endif /* USE_USBD_COMPOSITE  */
-
+__ALIGN_BEGIN static uint8_t HID_Audio_ReportDesc[HID_AUDIO_REPORT_DESC_SIZE] __ALIGN_END ={
+//音频
+  0x05, 0x0C,       // Usage Page (Consumer)
+  0x09, 0x01,       // Usage (Consumer Control)
+  0xA1, 0x01,       // Collection (Application)
+  0x85, 0x02,       // Report ID (2 for Audio Control)
+  0x09, 0xE9,       // Usage (Volume Up)
+  0x09, 0xEA,       // Usage (Volume Down)
+  0x09, 0xE2,       // Usage (Mute)
+  0x15, 0x00,       // Logical Minimum (0)
+  0x25, 0x01,       // Logical Maximum (1)
+  0x75, 0x01,       // Report Size (1)
+  0x95, 0x03,       // Report Count (3)
+  0x81, 0x02,       // Input (Data, Var, Abs)
+  0x75, 0x05,       // Report Size (5) - Padding
+  0x95, 0x01,       // Report Count (1)
+  0x81, 0x03,       // Input (Cnst, Var, Abs)
+  0xC0,             // End Collection
+  //屏幕亮度
+  0x05, 0x0C,       // USAGE_PAGE (Consumer Devices)
+  0x09, 0x01,       // USAGE (Consumer Control)
+  0xA1, 0x01,       // COLLECTION (Application)
+  0x85, 0x03,       // REPORT_ID (3)
+  0x09, 0x6F,       // USAGE (Brightness Increment)
+  0x09, 0x70,       // USAGE (Brightness Decrement)
+  0x15, 0x00,       // LOGICAL_MINIMUM (0)
+  0x25, 0x01,       // LOGICAL_MAXIMUM (1)
+  0x75, 0x01,       // REPORT_SIZE (1)
+  0x95, 0x02,       // REPORT_COUNT (2)
+  0x81, 0x02,       // INPUT (Data,Var,Abs)
+  0x95, 0x01,       // REPORT_COUNT (1)
+  0x75, 0x06,       // REPORT_SIZE (6)
+  0x81, 0x03,       // INPUT (Constant)
+  0xC0             // END_COLLECTION
+};
 __ALIGN_BEGIN static uint8_t HID_Keyboard_ReportDesc[HID_KEY_REPORT_DESC_SIZE] __ALIGN_END =
 {
   //键盘
@@ -253,43 +331,11 @@ __ALIGN_BEGIN static uint8_t HID_Keyboard_ReportDesc[HID_KEY_REPORT_DESC_SIZE] _
   0x29, 0x65, // USAGE_MAXIMUM (Keyboard Application)
   0x81, 0x00, // INPUT (Data,Ary,Abs)
   0xc0,       // END_COLLECTION
-  //音频
-  0x05, 0x0C,       // Usage Page (Consumer)
-  0x09, 0x01,       // Usage (Consumer Control)
-  0xA1, 0x01,       // Collection (Application)
-  0x85, 0x02,       // Report ID (2 for Audio Control)
-  0x09, 0xE9,       // Usage (Volume Up)
-  0x09, 0xEA,       // Usage (Volume Down)
-  0x09, 0xE2,       // Usage (Mute)
-  0x15, 0x00,       // Logical Minimum (0)
-  0x25, 0x01,       // Logical Maximum (1)
-  0x75, 0x01,       // Report Size (1)
-  0x95, 0x03,       // Report Count (3)
-  0x81, 0x02,       // Input (Data, Var, Abs)
-  0x75, 0x05,       // Report Size (5) - Padding
-  0x95, 0x01,       // Report Count (1)
-  0x81, 0x03,       // Input (Cnst, Var, Abs)
-  0xC0,             // End Collection
-  //屏幕亮度
-  0x05, 0x0C,       // USAGE_PAGE (Consumer Devices)
-  0x09, 0x01,       // USAGE (Consumer Control)
-  0xA1, 0x01,       // COLLECTION (Application)
-  0x85, 0x03,       // REPORT_ID (3)
-  0x09, 0x6F,       // USAGE (Brightness Increment)
-  0x09, 0x70,       // USAGE (Brightness Decrement)
-  0x15, 0x00,       // LOGICAL_MINIMUM (0)
-  0x25, 0x01,       // LOGICAL_MAXIMUM (1)
-  0x75, 0x01,       // REPORT_SIZE (1)
-  0x95, 0x02,       // REPORT_COUNT (2)
-  0x81, 0x02,       // INPUT (Data,Var,Abs)
-  0x95, 0x01,       // REPORT_COUNT (1)
-  0x75, 0x06,       // REPORT_SIZE (6)
-  0x81, 0x03,       // INPUT (Constant)
-  0xC0             // END_COLLECTION
 };
 
 
 static uint8_t HIDInEpAdd = HID_EPIN_ADDR;
+static uint8_t HIDInEpAddAudio = HID_EPIN_ADDR_AUDIO;
 
 /**
   * @}
@@ -340,6 +386,8 @@ static uint8_t USBD_HID_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   /* Open EP IN */
   (void)USBD_LL_OpenEP(pdev, HIDInEpAdd, USBD_EP_TYPE_INTR, HID_EPIN_SIZE);
   pdev->ep_in[HIDInEpAdd & 0xFU].is_used = 1U;
+  (void)USBD_LL_OpenEP(pdev, HIDInEpAddAudio, USBD_EP_TYPE_INTR, HID_EPIN_SIZE);
+  pdev->ep_in[HIDInEpAddAudio & 0xFU].is_used = 1U;
 
   hhid->state = USBD_HID_IDLE;
 
@@ -366,6 +414,10 @@ static uint8_t USBD_HID_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   (void)USBD_LL_CloseEP(pdev, HIDInEpAdd);
   pdev->ep_in[HIDInEpAdd & 0xFU].is_used = 0U;
   pdev->ep_in[HIDInEpAdd & 0xFU].bInterval = 0U;
+
+  (void)USBD_LL_CloseEP(pdev, HIDInEpAddAudio);
+  pdev->ep_in[HIDInEpAddAudio & 0xFU].is_used = 0U;
+  pdev->ep_in[HIDInEpAddAudio & 0xFU].bInterval = 0U;
 
   /* Free allocated memory */
   if (pdev->pClassDataCmsit[pdev->classId] != NULL)
@@ -399,7 +451,7 @@ static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *re
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {
-    case USB_REQ_TYPE_CLASS :
+    case USB_REQ_TYPE_CLASS:
       switch (req->bRequest)
       {
         case USBD_HID_REQ_SET_PROTOCOL:
@@ -421,12 +473,14 @@ static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *re
         case USBD_HID_REQ_SET_REPORT:
           ret = USBD_OK;
           break; 
+          
         default:
           USBD_CtlError(pdev, req);
           ret = USBD_FAIL;
           break;
       }
       break;
+
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest)
       {
@@ -443,15 +497,43 @@ static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *re
           break;
 
         case USB_REQ_GET_DESCRIPTOR:
-          if ((req->wValue >> 8) == HID_REPORT_DESC)
+          if (req->wIndex == 0)  // 键盘接口
           {
-            len = MIN(HID_KEY_REPORT_DESC_SIZE, req->wLength);
-            pbuf = HID_Keyboard_ReportDesc;
+            if ((req->wValue >> 8) == HID_REPORT_DESC)
+            {
+              len = MIN(HID_KEY_REPORT_DESC_SIZE, req->wLength);
+              pbuf = HID_Keyboard_ReportDesc;
+            }
+            else if ((req->wValue >> 8) == HID_DESCRIPTOR_TYPE)
+            {
+              pbuf = USBD_HID_Desc;
+              len = MIN(USB_HID_DESC_SIZ, req->wLength);
+            }
+            else
+            {
+              USBD_CtlError(pdev, req);
+              ret = USBD_FAIL;
+              break;
+            }
           }
-          else if ((req->wValue >> 8) == HID_DESCRIPTOR_TYPE)
+          else if (req->wIndex == 1)  // 音频和亮度接口
           {
-            pbuf = USBD_HID_Desc;
-            len = MIN(USB_HID_DESC_SIZ, req->wLength);
+            if ((req->wValue >> 8) == HID_REPORT_DESC)
+            {
+              len = MIN(HID_AUDIO_REPORT_DESC_SIZE, req->wLength);
+              pbuf = HID_Audio_ReportDesc;
+            }
+            else if ((req->wValue >> 8) == HID_DESCRIPTOR_TYPE)
+            {
+              pbuf = USBD_HID_Audio_Desc;
+              len = MIN(USB_HID_DESC_SIZ, req->wLength);
+            }
+            else
+            {
+              USBD_CtlError(pdev, req);
+              ret = USBD_FAIL;
+              break;
+            }
           }
           else
           {
